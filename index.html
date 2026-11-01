@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Expensiz</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#6f66e6" />
+    <link rel="icon" href="icon-192.png" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
     <style>
       :root {
         --bg: #f3f3fa;
@@ -1698,10 +1702,10 @@
               </p>
               <form id="fmega" class="fg">
                 <label class="full"
-                  >Your MEGA email (same as your Expensiz email)<input
+                  >Your MEGA email (the one you log in to MEGA with)<input
                     id="me"
                     type="email"
-                    readonly
+                    autocomplete="off"
                     required /></label
                 ><label class="full"
                   >Your MEGA password<input id="mp" type="password" required
@@ -2859,12 +2863,24 @@
         const ctl = new AbortController(),
           tm = setTimeout(() => ctl.abort(), 90000);
         try {
-          r = await fetch(CFG.API_URL + path, {
-            method: body ? "POST" : "GET",
-            headers: { "Content-Type": "application/json" },
-            body: body ? JSON.stringify(body) : undefined,
-            signal: ctl.signal,
-          });
+          if (window.expensizNet) {
+            /* Electron: send the request from the app's main process (no CORS limits) */
+            const x = await window.expensizNet.request(
+              CFG.API_URL + path,
+              body ? "POST" : "GET",
+              body ? JSON.stringify(body) : null,
+            );
+            if (x.error === "timeout")
+              throw Object.assign(new Error("t"), { name: "AbortError" });
+            if (x.error) throw new Error(x.error);
+            r = { ok: x.ok, json: async () => x.data };
+          } else
+            r = await fetch(CFG.API_URL + path, {
+              method: body ? "POST" : "GET",
+              headers: { "Content-Type": "application/json" },
+              body: body ? JSON.stringify(body) : undefined,
+              signal: ctl.signal,
+            });
         } catch (e) {
           throw new Error(
             e && e.name === "AbortError"
@@ -4271,11 +4287,18 @@
         if (!D.mega) throw new Error("Connect your MEGA account first.");
         await loadMega();
         try {
-          ust = await new mega.Storage({ email: U.email, password: D.mega.p })
-            .ready;
+          ust = await new mega.Storage({
+            email: D.mega.e || U.email,
+            password: D.mega.p,
+          }).ready;
         } catch (e) {
+          const m = String((e && e.message) || e);
           throw new Error(
-            "Could not open your MEGA account. Check the email and password.",
+            /ENOENT|-9\b/.test(m)
+              ? "MEGA did not accept that email and password. Use the exact email you log in to MEGA with. If your MEGA account has two-factor authentication, it is not supported here."
+              : /EMFA|-26|factor/i.test(m)
+                ? "This MEGA account uses two-factor authentication, which is not supported here. Use a MEGA account without it."
+                : "Could not open your MEGA account (" + m + ").",
           );
         }
         return ust;
@@ -4350,13 +4373,14 @@
         $("mautoW").hidden = !D.mega;
         $("mauto").checked = !!D.auto;
         $("bst").textContent = D.mega
-          ? `Connected to ${U.email}. Auto backup is ${D.auto ? "on" : "off"}. Last backup: ${lb ? new Date(lb).toLocaleString() : "not yet"}${pend ? ". Waiting for internet to back up." : "."}`
+          ? `Connected to ${D.mega.e || U.email}. Auto backup is ${D.auto ? "on" : "off"}. Last backup: ${lb ? new Date(lb).toLocaleString() : "not yet"}${pend ? ". Waiting for internet to back up." : "."}`
           : "Not connected. Use the same email you signed up to Expensiz with.";
       }
       function mset() {
-        const p = $("mp").value;
+        const p = $("mp").value,
+          e = $("me").value.trim().toLowerCase();
         if (p) {
-          D.mega = { p };
+          D.mega = { e: e || U.email, p };
           ust = null;
         } else if (!D.mega) throw new Error("Enter your MEGA password.");
       }
@@ -4441,6 +4465,10 @@
           bstat();
           toast("Backed up to MEGA");
         } catch (x) {
+          D.mega = null;
+          ust = null;
+          save();
+          bstat();
           toast(x.message);
         }
       };
@@ -5634,6 +5662,8 @@
           LS.set("nl_stay", null);
         }
       })();
+      if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol))
+        navigator.serviceWorker.register("sw.js").catch(() => {});
     </script>
   </body>
 </html>
