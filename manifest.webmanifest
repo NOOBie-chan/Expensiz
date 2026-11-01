@@ -1,0 +1,24 @@
+{
+  "name": "Expensiz",
+  "short_name": "Expensiz",
+  "description": "Track spending, stay on budget and reach your savings goals.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f3fa",
+  "theme_color": "#6f66e6",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
