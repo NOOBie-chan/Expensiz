@@ -933,6 +933,50 @@
         display: grid;
         gap: 12px;
       }
+      .patbox {
+        display: grid;
+        place-items: center;
+      }
+      .patsvg {
+        width: min(300px, 100%);
+        height: auto;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        cursor: pointer;
+      }
+      .patsvg .pn circle {
+        fill: var(--pane);
+        stroke: var(--acc);
+        stroke-width: 3;
+        transition: fill 0.12s;
+      }
+      .patsvg .pn text {
+        fill: var(--ink);
+        font: 700 22px var(--sans);
+        text-anchor: middle;
+        dominant-baseline: central;
+        pointer-events: none;
+      }
+      .patsvg .pn.on circle {
+        fill: var(--acc);
+      }
+      .patsvg .pn.on text {
+        fill: var(--on);
+      }
+      .patsvg .pl {
+        fill: none;
+        stroke: var(--acc);
+        stroke-width: 6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.55;
+        pointer-events: none;
+      }
+      #astat {
+        margin: 8px 0 0;
+        min-height: 0;
+      }
       .s2 {
         font:
           600 15px/1.6 ui-monospace,
@@ -995,7 +1039,7 @@
           <button class="on" data-tab="in">Sign in</button
           ><button data-tab="up">Create account</button>
         </div>
-        <form id="fin" class="fg">
+        <form id="fin" class="fg" novalidate>
           <label class="full"
             >Email<input
               id="lemail"
@@ -1023,7 +1067,7 @@
           >
           <div class="full"><button type="submit">Sign in</button></div>
         </form>
-        <form id="fup" class="fg" hidden>
+        <form id="fup" class="fg" novalidate hidden>
           <label
             >First name<input id="sfirst" autocomplete="given-name" required
           /></label>
@@ -1078,6 +1122,7 @@
           </div>
         </form>
         <p class="err" id="aerr" role="alert"></p>
+        <p class="lbl" id="astat" role="status"></p>
       </div>
     </div>
 
@@ -1541,7 +1586,7 @@
               <div id="sec2fa"></div>
             </div>
             <div class="card">
-              <h2>Biometric app lock</h2>
+              <h2>Pattern lock</h2>
               <div id="secbio"></div>
             </div>
             <div class="card">
@@ -1696,12 +1741,13 @@
     </div>
     <div id="lock" hidden>
       <div class="card">
-        <h1>Expensiz is locked</h1>
-        <p class="lbl" id="lkm">
-          Verify it is you with Windows Hello or your device lock.
-        </p>
+        <h1 id="lkt">Expensiz is locked</h1>
+        <p class="lbl" id="lkm"></p>
+        <div id="lkpad" class="patbox"></div>
         <div class="row">
           <button id="lku">Unlock</button
+          ><button class="ghost" id="lkc">Clear</button
+          ><button class="ghost" id="lkx" hidden>Cancel</button
           ><button class="ghost" id="lkr">Remove lock</button
           ><button class="ghost" id="lko">Sign out</button>
         </div>
@@ -1757,6 +1803,15 @@
       /* ---------- Config: your MEGA account stores the user accounts ---------- */
       const CFG = { API_URL: "https://expensiz.onrender.com" }; // address of your Expensiz server, for example 'https://expensiz-api.example.com'. No MEGA login goes here.
       const $ = (id) => document.getElementById(id);
+      const showErr = (m) => {
+        const a = $("auth"),
+          e = $("aerr");
+        if (a && e && !a.hidden) e.textContent = m || "Something went wrong.";
+      };
+      window.addEventListener("error", (ev) => showErr(ev.message));
+      window.addEventListener("unhandledrejection", (ev) =>
+        showErr(ev.reason && ev.reason.message),
+      );
       const esc = (s) =>
         String(s).replace(
           /[&<>"']/g,
@@ -2801,16 +2856,23 @@
         if (!CFG.API_URL)
           throw new Error("The Expensiz server is not connected.");
         let r;
+        const ctl = new AbortController(),
+          tm = setTimeout(() => ctl.abort(), 90000);
         try {
           r = await fetch(CFG.API_URL + path, {
             method: body ? "POST" : "GET",
             headers: { "Content-Type": "application/json" },
             body: body ? JSON.stringify(body) : undefined,
+            signal: ctl.signal,
           });
         } catch (e) {
           throw new Error(
-            "Could not reach the Expensiz server. Check your connection.",
+            e && e.name === "AbortError"
+              ? "The Expensiz server took too long to answer. Try again in a minute."
+              : "Could not reach the Expensiz server. Check your connection.",
           );
+        } finally {
+          clearTimeout(tm);
         }
         const j = await r.json().catch(() => ({}));
         if (!r.ok)
@@ -2937,15 +2999,37 @@
       function authForm(fn) {
         return async (e) => {
           e.preventDefault();
-          const b = e.target.querySelector("button[type=submit]");
+          const f = e.target,
+            b = f.querySelector("button[type=submit]"),
+            label = b.textContent;
           $("aerr").textContent = "";
+          $("astat").textContent = "";
+          if (!f.checkValidity()) {
+            const bad = f.querySelector(":invalid");
+            $("aerr").textContent =
+              (bad && bad.validationMessage) || "Please fill in every field.";
+            if (bad) bad.focus();
+            return;
+          }
           b.disabled = true;
+          b.textContent = fn === login ? "Signing in…" : "Creating account…";
+          const t0 = Date.now(),
+            iv = setInterval(() => {
+              $("astat").textContent =
+                $("ftf").hidden && Date.now() - t0 > 3000
+                  ? "Connecting to the server. If it has been idle this can take up to a minute…"
+                  : "";
+            }, 1000);
           try {
             await fn();
           } catch (x) {
-            $("aerr").textContent = x.message;
+            $("aerr").textContent =
+              (x && x.message) || "Something went wrong. Try again.";
           }
+          clearInterval(iv);
+          $("astat").textContent = "";
           b.disabled = false;
+          b.textContent = label;
         };
       }
       $("fin").onsubmit = authForm(login);
@@ -4739,7 +4823,6 @@
         hid = 0,
         SETUP = null,
         NEWRC = null,
-        BIOA = false,
         ED = null;
       function openEd(id) {
         const e = D.exp.find((x) => String(x.id) === id);
@@ -4929,7 +5012,7 @@
         document.title = t;
       };
 
-      /* ---------- Security: 2FA, biometric lock, devices, audit log ---------- */
+      /* ---------- Security: 2FA, pattern lock, devices, audit log ---------- */
       const DN = (() => {
         const u = navigator.userAgent;
         return (
@@ -5067,98 +5150,253 @@
           };
         });
       }
-      async function bioAvail() {
+      /* ---------- Pattern lock: 3x3 circled numbers, shuffled every time ---------- */
+      const PMIN = 4;
+      let PADI = null,
+        PRES = null;
+      function pshuf() {
+        const a = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        for (let i = 8; i > 0; i--) {
+          const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+      function patPad(box) {
+        const NS = "http://www.w3.org/2000/svg",
+          C = [50, 150, 250],
+          mk = (t, at) => {
+            const n = document.createElementNS(NS, t);
+            for (const k in at) n.setAttribute(k, at[k]);
+            return n;
+          },
+          svg = mk("svg", {
+            viewBox: "0 0 300 300",
+            class: "patsvg",
+            role: "group",
+            "aria-label":
+              "Pattern grid. Press the numbers 1 to 9 in order, then Enter.",
+          }),
+          trail = mk("polyline", { class: "pl" }),
+          live = mk("line", { class: "pl" }),
+          ng = mk("g", {});
+        svg.append(trail, live, ng);
+        box.innerHTML = "";
+        box.appendChild(svg);
+        const P = { seq: [], order: pshuf(), onEnter: null };
+        let drag = false;
+        const xy = (n) => {
+            const i = P.order.indexOf(n);
+            return [C[i % 3], C[(i / 3) | 0]];
+          },
+          draw = () => {
+            ng.innerHTML = "";
+            P.order.forEach((n, i) => {
+              const g = mk("g", {
+                class: "pn" + (P.seq.includes(n) ? " on" : ""),
+              });
+              g.append(
+                mk("circle", { cx: C[i % 3], cy: C[(i / 3) | 0], r: 27 }),
+              );
+              const t = mk("text", { x: C[i % 3], y: C[(i / 3) | 0] });
+              t.textContent = n;
+              g.append(t);
+              ng.append(g);
+            });
+            trail.setAttribute(
+              "points",
+              P.seq.map((n) => xy(n).join(",")).join(" "),
+            );
+            live.setAttribute("x1", 0);
+            live.setAttribute("y1", 0);
+            live.setAttribute("x2", 0);
+            live.setAttribute("y2", 0);
+          },
+          pt = (e) => {
+            const r = svg.getBoundingClientRect();
+            return [
+              ((e.clientX - r.left) * 300) / r.width,
+              ((e.clientY - r.top) * 300) / r.height,
+            ];
+          },
+          hit = ([x, y]) => {
+            for (let n = 1; n <= 9; n++) {
+              const [cx, cy] = xy(n);
+              if (Math.hypot(x - cx, y - cy) < 34) return n;
+            }
+            return 0;
+          },
+          add = (n) => {
+            if (!n || P.seq.includes(n)) return false;
+            P.seq.push(n);
+            draw();
+            return true;
+          };
+        P.add = (n) => add(n);
+        P.back = () => {
+          P.seq.pop();
+          draw();
+        };
+        P.reset = () => {
+          P.seq = [];
+          P.order = pshuf();
+          draw();
+        };
+        svg.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          drag = true;
+          try {
+            svg.setPointerCapture(e.pointerId);
+          } catch (x) {}
+          add(hit(pt(e)));
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const p = pt(e);
+          add(hit(p));
+          if (P.seq.length) {
+            const [lx, ly] = xy(P.seq[P.seq.length - 1]);
+            live.setAttribute("x1", lx);
+            live.setAttribute("y1", ly);
+            live.setAttribute("x2", p[0]);
+            live.setAttribute("y2", p[1]);
+          }
+        });
+        const up = () => {
+          drag = false;
+          live.setAttribute("x2", live.getAttribute("x1"));
+          live.setAttribute("y2", live.getAttribute("y1"));
+        };
+        svg.addEventListener("pointerup", up);
+        svg.addEventListener("pointercancel", up);
+        draw();
+        return P;
+      }
+      document.addEventListener("keydown", (e) => {
+        if (!PADI || $("lock").hidden) return;
+        if (e.target.closest && e.target.closest("input,textarea,dialog"))
+          return;
+        if (document.querySelector("dialog[open]")) return;
+        if (/^[1-9]$/.test(e.key)) PADI.add(+e.key);
+        else if (e.key === "Backspace") PADI.back();
+        else if (e.key === "Enter" && PADI.onEnter) PADI.onEnter();
+        else if (e.key === "Escape" && !$("lkx").hidden) $("lkx").click();
+      });
+      const patHash = (seq, salt) => hash(seq.join("-"), unb(salt));
+      function patShow(cfg) {
+        $("lkt").textContent = cfg.title;
+        $("lkm").textContent = cfg.msg;
+        $("lku").textContent = cfg.ok;
+        $("lkr").hidden = $("lko").hidden = !cfg.gate;
+        $("lkx").hidden = !!cfg.gate;
+        $("lock").hidden = false;
+        PADI = patPad($("lkpad"));
+        return new Promise((res) => {
+          PRES = res;
+          const go = () => {
+            if (PADI.seq.length < PMIN) {
+              $("lkm").textContent = "Use at least " + PMIN + " numbers.";
+              PADI.reset();
+              return;
+            }
+            const q = PADI.seq.slice();
+            PADI.reset();
+            res(q);
+          };
+          PADI.onEnter = go;
+          $("lku").onclick = go;
+          $("lkc").onclick = () => PADI.reset();
+          $("lkx").onclick = () => res(null);
+        });
+      }
+      async function patSetup() {
+        let msg =
+          "Tap or drag across at least 4 numbers, in any order. Any number can join any number. They shuffle every time.";
         try {
-          return !!(
-            window.PublicKeyCredential &&
-            (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
-          );
-        } catch (e) {
-          return false;
+          for (;;) {
+            const p = await patShow({
+              title: "Set up pattern lock",
+              msg,
+              ok: "Next",
+            });
+            if (!p) return false;
+            const q = await patShow({
+              title: "Confirm your pattern",
+              msg: "Draw the same pattern again. The numbers have moved, so follow the numbers, not the positions.",
+              ok: "Confirm",
+            });
+            if (!q) return false;
+            if (p.join("-") === q.join("-")) {
+              const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+              LS.set("nl_pat_" + U.email, {
+                s: salt,
+                h: await patHash(p, salt),
+              });
+              return true;
+            }
+            msg = "The two patterns did not match. Start again.";
+          }
+        } finally {
+          $("lock").hidden = true;
+          PADI = null;
         }
       }
-      async function bioEnroll() {
-        const c = await navigator.credentials.create({
-          publicKey: {
-            challenge: crypto.getRandomValues(new Uint8Array(32)),
-            rp: { name: "Expensiz" },
-            user: {
-              id: crypto.getRandomValues(new Uint8Array(16)),
-              name: U.email,
-              displayName: U.first + " " + U.last,
-            },
-            pubKeyCredParams: [
-              { type: "public-key", alg: -7 },
-              { type: "public-key", alg: -257 },
-            ],
-            authenticatorSelection: {
-              authenticatorAttachment: "platform",
-              userVerification: "required",
-              residentKey: "discouraged",
-            },
-            timeout: 60000,
-          },
-        });
-        LS.set("nl_bio_" + U.email, b64(new Uint8Array(c.rawId)));
-      }
-      async function bioAsk(em) {
-        const ch = crypto.getRandomValues(new Uint8Array(32)),
-          a = await navigator.credentials.get({
-            publicKey: {
-              challenge: ch,
-              allowCredentials: [
-                { type: "public-key", id: unb(LS.get("nl_bio_" + em)) },
-              ],
-              userVerification: "required",
-              timeout: 60000,
-            },
-          }),
-          cd = JSON.parse(new TextDecoder().decode(a.response.clientDataJSON)),
-          ad = new Uint8Array(a.response.authenticatorData);
-        return (
-          cd.type === "webauthn.get" &&
-          cd.challenge === b64u(ch) &&
-          (ad[32] & 4) === 4
-        );
-      }
-      function bioGate() {
-        return new Promise((res) => {
-          const em = U.email,
-            L = $("lock"),
-            done = () => {
-              L.hidden = true;
-              locked = 0;
-              res();
-            },
-            go1 = async () => {
-              $("lkm").textContent =
-                "Waiting for Windows Hello or your device lock…";
-              let ok = false;
-              try {
-                ok = await bioAsk(em);
-              } catch (e) {}
-              logS(ok ? "Biometric unlock" : "Biometric unlock failed", !ok);
-              if (ok) done();
-              else $("lkm").textContent = "Could not verify. Try again.";
-            };
-          locked = 1;
-          L.hidden = false;
-          $("lku").onclick = go1;
-          $("lkr").onclick = async () => {
-            if (await askPw()) {
-              localStorage.removeItem("nl_bio_" + em);
-              logS("Biometric lock removed", 1);
-              done();
-            }
-          };
-          $("lko").onclick = () => {
-            LS.set("nl_stay", null);
-            idb("del", "key:" + em)
-              .catch(() => {})
-              .then(() => location.reload());
-          };
-          go1();
-        });
+      async function patGate() {
+        const em = U.email;
+        locked = 1;
+        $("lko").onclick = () => {
+          LS.set("nl_stay", null);
+          idb("del", "key:" + em)
+            .catch(() => {})
+            .then(() => location.reload());
+        };
+        $("lkr").onclick = async () => {
+          if (await askPw()) {
+            localStorage.removeItem("nl_pat_" + em);
+            localStorage.removeItem("nl_patw_" + em);
+            logS("Pattern lock removed", 1);
+            if (PRES) PRES(null);
+          }
+        };
+        let msg =
+          "Draw your pattern by tapping or dragging across the numbers. They move every time.";
+        for (;;) {
+          const rec = LS.get("nl_pat_" + em, null);
+          if (!rec) break;
+          const p = await patShow({
+            title: "Expensiz is locked",
+            msg,
+            ok: "Unlock",
+            gate: true,
+          });
+          if (!p) break;
+          const until = LS.get("nl_patw_" + em, 0);
+          if (until > Date.now()) {
+            msg =
+              "Too many wrong tries. Try again in " +
+              Math.ceil((until - Date.now()) / 1000) +
+              " seconds.";
+            continue;
+          }
+          if ((await patHash(p, rec.s)) === rec.h) {
+            LS.set("nl_pf_" + em, 0);
+            logS("Pattern unlock");
+            break;
+          }
+          const f = LS.get("nl_pf_" + em, 0) + 1;
+          if (f >= 5) {
+            LS.set("nl_pf_" + em, 0);
+            LS.set("nl_patw_" + em, Date.now() + 30000);
+            msg = "Too many wrong tries. Wait 30 seconds, or remove the lock with your password.";
+          } else {
+            LS.set("nl_pf_" + em, f);
+            msg = "That pattern is not right. Try again.";
+          }
+          logS("Pattern unlock failed", 1);
+        }
+        $("lock").hidden = true;
+        PADI = null;
+        locked = 0;
       }
       document.addEventListener("visibilitychange", () => {
         if (!D) return;
@@ -5167,9 +5405,9 @@
           hid &&
           !locked &&
           Date.now() - hid > 3e5 &&
-          LS.get("nl_bio_" + U.email, null)
+          LS.get("nl_pat_" + U.email, null)
         )
-          bioGate();
+          patGate();
       });
       function flog(em) {
         const l = LS.get("nl_flog_" + em, []).filter(
@@ -5245,7 +5483,8 @@
         }
         pruneLog();
         if (!key && D.sec.tfa && D.sec.tfa.on) await tfaGate();
-        if (LS.get("nl_bio_" + em, null)) await bioGate();
+        localStorage.removeItem("nl_bio_" + em);
+        if (LS.get("nl_pat_" + em, null)) await patGate();
         devUp(true);
         if (!key) logS("Signed in");
       }
@@ -5255,7 +5494,7 @@
         const s = D.sec,
           t = s.tfa,
           em = U.email,
-          bo = LS.get("nl_bio_" + em, null),
+          bo = LS.get("nl_pat_" + em, null),
           link = SETUP
             ? `otpauth://totp/Expensiz:${encodeURIComponent(em)}?secret=${SETUP}&issuer=Expensiz`
             : "";
@@ -5267,11 +5506,9 @@
             : SETUP
               ? `<p class="lbl">Scan this with an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy, or type the key in. Then enter the 6-digit code it shows.</p><div id="qr"></div><div class="s2">${SETUP.match(/.{1,4}/g).join(" ")}</div><p><a href="${link}">Open in authenticator app</a></p><label>6-digit code<input id="s2c" inputmode="numeric" maxlength="7" autocomplete="off"></label><div class="row" style="margin-top:8px"><button data-s="ok">Turn on</button><button class="ghost" data-s="cancel">Cancel</button></div>`
               : '<p class="lbl">After your password, ask for a 6-digit code from an authenticator app when you sign in.</p><button data-s="on">Set up</button>';
-        $("secbio").innerHTML = !BIOA
-          ? '<p class="lbl">Not available here. It needs Windows Hello, Touch ID or a device screen lock, and the app opened over https or localhost.</p>'
-          : bo
-            ? '<p class="lbl">On for this device. After your password (and two-factor code), and each time you reopen the app while staying signed in, you unlock with Windows Hello or your device lock.</p><div class="row"><button class="ghost" data-s="lock">Lock now</button><button class="dng" data-s="boff">Turn off</button></div>'
-            : '<p class="lbl">Use Windows Hello or your device authentication to unlock Expensiz on this device.</p><button data-s="bon">Turn on</button>';
+        $("secbio").innerHTML = bo
+          ? '<p class="lbl">On for this device. After your password (and two-factor code), and each time you reopen the app while staying signed in, you unlock by connecting your numbers. The numbers shuffle every time.</p><div class="row"><button class="ghost" data-s="lock">Lock now</button><button class="ghost" data-s="pchg">Change pattern</button><button class="dng" data-s="boff">Turn off</button></div>'
+          : '<p class="lbl">Unlock Expensiz on this device by connecting numbers on a 3×3 grid. The numbers shuffle every time, so a smudge or a glance over your shoulder gives nothing away.</p><button data-s="bon">Set up</button>';
         $("secdev").innerHTML = [...s.devs]
           .sort((a, b) => b.last - a.last)
           .map(
@@ -5358,29 +5595,24 @@
             await logS("Two-factor authentication turned off", 1);
           }
         } else if (a === "bon") {
-          try {
-            await bioEnroll();
-            await logS("Biometric lock turned on");
-            toast("Biometric lock is on for this device");
-          } catch (x) {
-            toast(
-              x.name === "NotAllowedError"
-                ? "Setup was cancelled."
-                : "Biometric lock is not available here. Open the app over https or localhost.",
-            );
+          if (await patSetup()) {
+            await logS("Pattern lock turned on");
+            toast("Pattern lock is on for this device");
+          }
+        } else if (a === "pchg") {
+          if ((await askPw()) && (await patSetup())) {
+            await logS("Pattern changed", 1);
+            toast("Pattern changed");
           }
         } else if (a === "boff") {
           if (await askPw()) {
-            localStorage.removeItem("nl_bio_" + U.email);
-            await logS("Biometric lock turned off", 1);
+            localStorage.removeItem("nl_pat_" + U.email);
+            localStorage.removeItem("nl_patw_" + U.email);
+            await logS("Pattern lock turned off", 1);
           }
-        } else if (a === "lock") bioGate();
+        } else if (a === "lock") patGate();
         renderSec();
       };
-      bioAvail().then((v) => {
-        BIOA = v;
-        renderSec();
-      });
       setInterval(() => {
         if (D) {
           pruneLog();
