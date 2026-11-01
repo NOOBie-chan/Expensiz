@@ -1,0 +1,5407 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Expensiz</title>
+    <style>
+      :root {
+        --bg: #f3f3fa;
+        --pane: #fff;
+        --ink: #1f2030;
+        --mute: #7a7b8f;
+        --line: #e8e8f2;
+        --acc: #6f66e6;
+        --on: #fff;
+        --gold: #e0a526;
+        --bad: #d9534f;
+        --off: #e51e18;
+        --side: #222224;
+        --sh:
+          0 1px 2px rgba(30, 30, 70, 0.05), 0 6px 18px rgba(30, 30, 70, 0.05);
+        --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color-scheme: light;
+      }
+      :root[data-theme="dark"] {
+        --bg: #13131c;
+        --pane: #1c1c29;
+        --ink: #ecebf5;
+        --mute: #9a9ab0;
+        --line: #2b2b3d;
+        --acc: #8b83f2;
+        --on: #10101a;
+        --gold: #e6b24a;
+        --bad: #ef6f63;
+        --side: #0c0c12;
+        --sh: none;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 14px/1.5 var(--sans);
+        font-variant-numeric: tabular-nums;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      input,
+      select,
+      button,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+      input,
+      select,
+      textarea {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 9px 11px;
+        min-width: 0;
+        width: 100%;
+      }
+      input[type="checkbox"] {
+        width: auto;
+      }
+      :focus-visible {
+        outline: 2px solid var(--acc);
+        outline-offset: 2px;
+      }
+      button {
+        cursor: pointer;
+        border: 0;
+        background: var(--acc);
+        color: var(--on);
+        border-radius: 8px;
+        padding: 9px 16px;
+        font-weight: 600;
+      }
+      button.ghost {
+        background: var(--pane);
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+      button.x {
+        padding: 2px 8px;
+        background: transparent;
+        color: var(--mute);
+      }
+      button.x:hover {
+        color: var(--bad);
+      }
+      h1 {
+        font: 700 24px var(--sans);
+        margin: 0;
+      }
+      h2 {
+        font: 700 16px var(--sans);
+        margin: 0 0 10px;
+      }
+      label {
+        display: grid;
+        gap: 3px;
+        font-size: 13px;
+        color: var(--mute);
+      }
+      .fg {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr 1fr;
+      }
+      .full {
+        grid-column: 1/-1;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .lbl {
+        color: var(--mute);
+        font-size: 13px;
+      }
+      .err {
+        color: var(--bad);
+        font-size: 14px;
+        min-height: 20px;
+        margin: 8px 0 0;
+      }
+      .card {
+        background: var(--pane);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: var(--sh);
+        /* max-height: max-content; */
+      }
+      #themeBtn {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 20;
+        padding: 6px 14px;
+        border-radius: 99px;
+      }
+      #themeBtn.in {
+        position: static;
+      }
+      /* auth */
+      #auth {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #b5abf4, #756ced);
+      }
+      :root[data-theme="dark"] #auth {
+        background: linear-gradient(135deg, #2b2650, #13131c);
+      }
+      #auth .card {
+        width: min(440px, 100%);
+        padding: 26px;
+        border-radius: 14px;
+      }
+      .tabs {
+        display: flex;
+        gap: 18px;
+        border-bottom: 1px solid var(--line);
+        margin: 16px 0;
+      }
+      .tabs button {
+        background: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 0;
+        color: var(--mute);
+        padding: 6px 0;
+      }
+      .tabs button.on {
+        color: var(--ink);
+        border-color: var(--acc);
+      }
+      /* sidebar */
+      .side {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 230px;
+        z-index: 40;
+        display: flex;
+        flex-direction: column;
+        padding: 6px 12px;
+        background: var(--side);
+        color: #e9e9ef;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        overflow-y: auto;
+      }
+      body.nav-open .side {
+        transform: none;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+      }
+      .side .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 8px 20px;
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .lg {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 6px solid var(--acc);
+        background: #fff;
+      }
+      .side .nl {
+        display: block;
+        color: #7d7d8c;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        padding: 0 8px 8px;
+      }
+      .side button {
+        flex: none;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+        background: none;
+        border-radius: 8px;
+        color: #a3a3b2;
+        padding: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 2px;
+      }
+      .side button.on {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .side .me {
+        display: block;
+        margin-top: auto;
+        padding: 12px 8px;
+        font-size: 13px;
+        color: #a3a3b2;
+      }
+      .side .me button {
+        display: inline-block;
+        background: transparent;
+        border: 1px solid #3a3a46;
+        color: #e9e9ef;
+        padding: 5px 12px;
+        margin-top: 8px;
+      }
+      #scrim {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 10, 20, 0.5);
+        z-index: 35;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+      }
+      body.nav-open #scrim {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #menu {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 45;
+        padding: 6px 12px;
+        font-size: 18px;
+        line-height: 1;
+        box-shadow: var(--sh);
+        transition: opacity 0.2s ease;
+      }
+      body.nav-open #menu {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #list {
+        max-height: 254px;
+        overflow-y: auto;
+      }
+      #list::-webkit-scrollbar,
+      .irs::-webkit-scrollbar,
+      textarea::-webkit-scrollbar {
+        width: 12px;
+      }
+      #list::-webkit-scrollbar-track,
+      .irs::-webkit-scrollbar-track,
+      textarea::-webkit-scrollbar-track {
+        background: var(--pane);
+      }
+      #list::-webkit-scrollbar-thumb,
+      .irs::-webkit-scrollbar-thumb,
+      textarea::-webkit-scrollbar-thumb {
+        background: var(--acc);
+        border-radius: 6px;
+      }
+      #list::-webkit-scrollbar-thumb:hover,
+      .irs::-webkit-scrollbar-thumb:hover,
+      textarea::-webkit-scrollbar-thumb:hover {
+        background: var(--ink);
+      }
+      .irs {
+        padding-right: 10px;
+      }
+      dialog {
+        border: 0;
+        border-radius: 12px;
+        padding: 22px;
+        background: var(--pane);
+        color: var(--ink);
+        width: min(380px, 92vw);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      }
+      dialog::backdrop {
+        background: rgba(10, 10, 20, 0.5);
+      }
+      #conf {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 60;
+        display: none;
+      }
+      @media (max-width: 819px) {
+        .top {
+          padding-left: 54px;
+        }
+        .card {
+          max-height: max-content;
+        }
+      }
+      @media (max-width: 508px) {
+        .top {
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        .top .row .status {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+      .irs {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .ic {
+        font-size: 17px;
+        line-height: 1;
+      }
+      .grid {
+        display: grid;
+        gap: 20px;
+      }
+      .grid.two {
+        display: flex;
+        flex-direction: column;
+      }
+      .grid.streak {
+        display: grid;
+        gap: 20px;
+      }
+      main {
+        padding: 14px 14px 40px;
+        max-width: 1100px;
+      }
+      .top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+      .tbr {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex: 1 1 auto;
+        justify-content: flex-end;
+      }
+      .sp {
+        max-width: 260px;
+        border-radius: 99px;
+        background: var(--pane);
+        box-shadow: var(--sh);
+        border: 0;
+        padding: 9px 16px;
+      }
+      .av {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--acc);
+        color: var(--on);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .un {
+        display: none;
+        font-weight: 600;
+      }
+      .net {
+        font-size: 12px;
+        color: var(--mute);
+      }
+      .net i {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #2fb67c;
+        margin-right: 6px;
+      }
+      .net.off i {
+        background: var(--off);
+      }
+      .sec {
+        margin: 22px 0 10px;
+      }
+      .alert {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border-left: 4px solid var(--gold);
+        background: var(--pane);
+        margin-bottom: 14px;
+        box-shadow: var(--sh);
+      }
+      .alert.bad {
+        border-color: var(--bad);
+      }
+      .tbl {
+        padding: 0;
+        overflow: hidden;
+      }
+      .th,
+      .tr2 {
+        display: grid;
+        grid-template-columns: 2fr 1.2fr 1fr 1fr;
+        gap: 10px;
+        padding: 11px 16px;
+        align-items: center;
+      }
+      .th {
+        color: var(--mute);
+        font-size: 12px;
+      }
+      .tr2 {
+        border-top: 1px solid var(--line);
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px;
+      }
+      .tile {
+        background: var(--pane);
+        color: var(--ink);
+        box-shadow: var(--sh);
+        text-align: left;
+        display: grid;
+        gap: 22px;
+        padding: 14px;
+        border-radius: 10px;
+      }
+      .tile .ic {
+        font-size: 20px;
+      }
+      .tile.on {
+        background: var(--acc);
+        color: #fff;
+      }
+      .stath {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 22px 0 10px;
+      }
+      .stath h2 {
+        margin: 0;
+      }
+      .pills {
+        display: flex;
+        gap: 6px;
+      }
+      .pills button {
+        background: var(--line);
+        color: var(--mute);
+        padding: 5px 12px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .pills button.on {
+        background: var(--acc);
+        color: #fff;
+      }
+      .g3,
+      .g33,
+      .g4,
+      .g2x {
+        display: grid;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .area {
+        width: 100%;
+        height: 150px;
+        display: block;
+        margin-top: 8px;
+      }
+      .al {
+        fill: none;
+        stroke: var(--acc);
+        stroke-width: 2.5;
+        vector-effect: non-scaling-stroke;
+      }
+      .af {
+        fill: url(#ag);
+      }
+      .alab {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--mute);
+        margin-top: 4px;
+      }
+      .dnw {
+        display: grid;
+        place-items: center;
+        padding-top: 6px;
+      }
+      .dn {
+        width: 150px;
+        height: 150px;
+      }
+      .dtr {
+        fill: none;
+        stroke: var(--line);
+        stroke-width: 3.2;
+      }
+      .dpr {
+        fill: none;
+        stroke: var(--acc);
+        stroke-width: 3.2;
+        stroke-linecap: round;
+      }
+      .dn.warn .dpr {
+        stroke: var(--gold);
+      }
+      .dn.bad .dpr {
+        stroke: var(--bad);
+      }
+      .dt {
+        fill: var(--ink);
+        font: 700 7px var(--sans);
+      }
+      .bars {
+        display: flex;
+        gap: 6px;
+        height: 150px;
+        margin-top: 8px;
+      }
+      .bc {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 10px;
+        color: var(--mute);
+        text-align: center;
+      }
+      .bt {
+        flex: 1;
+        background: var(--line);
+        border-radius: 4px;
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+      }
+      .bt i {
+        display: block;
+        width: 100%;
+        background: var(--acc);
+        border-radius: 4px;
+      }
+      .bar {
+        height: 10px;
+        background: var(--line);
+        border-radius: 6px;
+        overflow: hidden;
+        margin: 6px 0 3px;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        background: var(--acc);
+        transition: width 0.3s;
+      }
+      .ledger .item,
+      .item {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 2px 10px;
+        align-items: center;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .item small {
+        color: var(--mute);
+        grid-column: 1/-1;
+        margin-top: -4px;
+      }
+      .amt {
+        font-weight: 700;
+      }
+      .empty {
+        color: var(--mute);
+        padding: 12px 0;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        margin-right: 6px;
+      }
+      .cb {
+        padding: 5px 0;
+      }
+      .cb div {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .cb .bar {
+        height: 6px;
+        margin: 3px 0 0;
+      }
+      .tally {
+        display: flex;
+        gap: 6px;
+        align-items: flex-end;
+        height: 40px;
+      }
+      .tally i {
+        width: 5px;
+        height: 40px;
+        border-radius: 2px;
+        background: var(--acc);
+      }
+      .tally i.m {
+        height: 8px;
+        background: var(--line);
+      }
+      .tally i.p {
+        height: 4px;
+        background: var(--line);
+        opacity: 0.5;
+      }
+      .tally i:nth-child(5n) {
+        margin-right: 12px;
+      }
+      .num {
+        font: 700 40px/1 var(--sans);
+      }
+      .badges {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+      .badge {
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        color: var(--mute);
+        font-size: 13px;
+      }
+      .badge.on {
+        border: 1px solid var(--acc);
+        color: var(--ink);
+        background: var(--pane);
+      }
+      .badge b {
+        display: block;
+        font-size: 15px;
+      }
+      .dz {
+        display: grid;
+        gap: 6px;
+        place-items: center;
+        text-align: center;
+        border: 2px dashed var(--line);
+        border-radius: 12px;
+        padding: 26px;
+        cursor: pointer;
+        color: var(--mute);
+      }
+      .dz:hover {
+        border-color: var(--acc);
+      }
+      .dz b {
+        color: var(--ink);
+      }
+      .st b {
+        display: block;
+        font-size: 22px;
+      }
+      .ir {
+        display: grid;
+        grid-template-columns: auto 1fr 140px auto;
+        gap: 10px;
+        align-items: center;
+        padding: 8px 0;
+        border-top: 1px solid var(--line);
+      }
+      .ir small {
+        display: block;
+        color: var(--mute);
+      }
+      .chip {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 0;
+        border-top: 1px solid var(--line);
+      }
+      textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+      #toast {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: var(--bg);
+        padding: 9px 16px;
+        border-radius: 8px;
+        display: none;
+        z-index: 30;
+      }
+      @media (max-width: 600px) {
+        .th,
+        .tr2 {
+          grid-template-columns: 1fr auto;
+        }
+        .hm {
+          display: none;
+        }
+        .ir {
+          grid-template-columns: auto 1fr auto;
+        }
+        .ir select {
+          grid-column: 2/-1;
+        }
+      }
+      @media (min-width: 820px) {
+        .side {
+          transform: none;
+          transition: none;
+          width: 210px;
+        }
+        #menu,
+        #scrim {
+          display: none;
+        }
+        main {
+          margin-left: 210px;
+          padding: 24px 30px 40px;
+        }
+        .un {
+          display: block;
+        }
+        .g3 {
+          grid-template-columns: 1.8fr 1fr 1fr;
+        }
+        .g33 {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .g4 {
+          grid-template-columns: repeat(4, 1fr);
+        }
+        .g2x {
+          grid-template-columns: 1fr 1fr;
+        }
+        .two {
+          grid-template-columns: 1fr 1fr;
+          display: grid;
+          gap: 24px;
+        }
+        #toast {
+          bottom: 20px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .bar i,
+        .side,
+        #scrim,
+        #menu {
+          transition: none;
+        }
+      }
+
+      .tally {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        align-items: center;
+        height: auto;
+      }
+      .fl {
+        fill: var(--acc);
+        flex: none;
+      }
+      .fl.m {
+        fill: var(--line);
+      }
+      .fl.p {
+        fill: var(--line);
+        opacity: 0.4;
+      }
+      .num {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .badges {
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      }
+      .badge {
+        display: grid;
+        gap: 4px;
+        align-content: start;
+        background: var(--pane);
+      }
+      .bi {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--line);
+        color: var(--mute);
+        font-size: 16px;
+      }
+      .badge.on .bi {
+        background: var(--acc);
+        color: var(--on);
+      }
+      .badge small {
+        color: var(--mute);
+      }
+      .badge .bar {
+        height: 6px;
+        margin: 4px 0 0;
+      }
+      .badge em {
+        color: var(--acc);
+        font-style: normal;
+        font-weight: 600;
+        font-size: 12px;
+      }
+      .chk {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        color: var(--ink);
+        margin-top: 10px;
+      }
+      .chk[hidden] {
+        display: none;
+      }
+      .dng {
+        background: var(--bad);
+        color: #fff;
+      }
+      .danger {
+        margin-top: 16px;
+        padding: 14px;
+        border: 1px solid var(--bad);
+        border-radius: 10px;
+      }
+      .danger h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: var(--bad);
+      }
+
+      #list .item {
+        grid-template-columns: 1fr auto auto auto;
+      }
+      #flt {
+        margin-bottom: 8px;
+      }
+      #fsum {
+        margin: 0 0 8px;
+      }
+      #lock {
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        display: grid;
+        place-items: center;
+        background: var(--bg);
+        padding: 20px;
+      }
+      #lock .card {
+        width: min(400px, 100%);
+        display: grid;
+        gap: 12px;
+      }
+      .s2 {
+        font:
+          600 15px/1.6 ui-monospace,
+          Consolas,
+          monospace;
+        letter-spacing: 0.06em;
+        word-break: break-all;
+      }
+      .rcs {
+        columns: 2;
+        font-family: ui-monospace, Consolas, monospace;
+        margin: 8px 0;
+      }
+      @media print {
+        .side,
+        .top,
+        #scrim,
+        #themeBtn,
+        .noprint,
+        #toast {
+          display: none !important;
+        }
+        :root {
+          --bg: #fff !important;
+          --pane: #fff !important;
+          --ink: #111 !important;
+          --mute: #555 !important;
+          --line: #ddd !important;
+        }
+        main {
+          margin: 0 !important;
+          padding: 0 !important;
+          max-width: none;
+        }
+        .card {
+          box-shadow: none !important;
+          border: 1px solid #ddd;
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <button
+      class="ghost"
+      id="themeBtn"
+      aria-label="Switch between light and dark mode"
+    >
+      Dark
+    </button>
+
+    <!-- SIGN IN / CREATE ACCOUNT -->
+    <div id="auth">
+      <div class="card">
+        <h1>Expensiz</h1>
+        <div class="lbl">
+          Track spending, stay on budget, reach your savings goal.
+        </div>
+        <div class="tabs">
+          <button class="on" data-tab="in">Sign in</button
+          ><button data-tab="up">Create account</button>
+        </div>
+        <form id="fin" class="fg">
+          <label class="full"
+            >Email<input
+              id="lemail"
+              type="email"
+              autocomplete="username"
+              required
+          /></label>
+          <label class="full"
+            >Password<input
+              id="lpw"
+              type="password"
+              autocomplete="current-password"
+              required
+          /></label>
+          <label
+            class="full"
+            style="
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              gap: 8px;
+            "
+            ><input id="stay" type="checkbox" style="width: auto" /> Stay signed
+            in on this device for 30 days</label
+          >
+          <div class="full"><button type="submit">Sign in</button></div>
+        </form>
+        <form id="fup" class="fg" hidden>
+          <label
+            >First name<input id="sfirst" autocomplete="given-name" required
+          /></label>
+          <label
+            >Last name<input id="slast" autocomplete="family-name" required
+          /></label>
+          <label class="full"
+            >Email<input id="semail" type="email" autocomplete="email" required
+          /></label>
+          <label
+            >Password<input
+              id="spw"
+              type="password"
+              minlength="8"
+              autocomplete="new-password"
+              required
+          /></label>
+          <label
+            >Confirm password<input
+              id="spw2"
+              type="password"
+              minlength="8"
+              autocomplete="new-password"
+              required
+          /></label>
+          <label class="full">Currency<select id="scur"></select></label>
+          <div class="full">
+            <button type="submit">Create account</button>
+            <div class="lbl" style="margin-top: 8px">
+              Creating an account needs an internet connection.
+            </div>
+          </div>
+        </form>
+        <form id="ftf" class="fg" hidden>
+          <div class="full">
+            <h2>Two-step verification</h2>
+            <div class="lbl">
+              Enter the 6-digit code from your authenticator app, or a recovery
+              code.
+            </div>
+          </div>
+          <label class="full"
+            >Code<input
+              id="tfc"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              required
+          /></label>
+          <div class="full row">
+            <button type="submit">Verify</button
+            ><button type="button" class="ghost" id="tfx">Cancel</button>
+          </div>
+        </form>
+        <p class="err" id="aerr" role="alert"></p>
+      </div>
+    </div>
+
+    <!-- APP -->
+    <div id="app" hidden>
+      <nav class="side" aria-label="Sections">
+        <div class="logo"><span class="lg"></span>Expensiz</div>
+        <!-- <div class="nl">NAVIGATION</div> -->
+        <button data-v="overview" class="on">
+          <span class="ic">⌂</span>Overview</button
+        ><button data-v="expenses"><span class="ic">☰</span>Expenses</button
+        ><button data-v="plan"><span class="ic">◎</span>Plan</button
+        ><button data-v="import"><span class="ic">⇪</span>Import</button
+        ><button data-v="convert"><span class="ic">¤</span>Convert</button
+        ><button data-v="recurring"><span class="ic">↻</span>Recurring</button
+        ><button data-v="reports"><span class="ic">▤</span>Reports</button
+        ><button data-v="security"><span class="ic">⛨</span>Security</button
+        ><button data-v="streaks"><span class="ic">✦</span>Streaks</button
+        ><button data-v="settings"><span class="ic">⚙</span>Settings</button>
+        <div class="me">
+          <div id="who" style="display: none"></div>
+          <button id="out">Sign out</button>
+        </div>
+      </nav>
+      <div id="scrim"></div>
+      <main>
+        <div class="top">
+          <div class="row" style="gap: 12px; flex-wrap: nowrap">
+            <button
+              class="ghost"
+              id="menu"
+              aria-label="Open or close the menu"
+              aria-expanded="false"
+            >
+              ☰
+            </button>
+            <div class="status">
+              <h1 id="title">Overview</h1>
+              <span class="net" id="net"><i></i><span></span></span>
+            </div>
+          </div>
+          <div class="tbr">
+            <input
+              id="gs"
+              class="sp"
+              type="search"
+              placeholder="Search expenses"
+              aria-label="Search expenses"
+            /><span id="tbSlot"></span>
+            <div class="av" id="av"></div>
+            <span class="un" id="un"></span>
+          </div>
+        </div>
+
+        <section id="v-overview">
+          <div id="due"></div>
+          <div id="alerts"></div>
+          <h2>Recent expenses</h2>
+          <div class="card tbl">
+            <div class="th">
+              <span>Description</span><span class="hm">Category</span
+              ><span class="hm">Date</span><span>Amount</span>
+            </div>
+            <div id="recent"></div>
+          </div>
+          <h2 class="sec">Menu</h2>
+          <div class="tiles">
+            <button class="tile on" data-v="import">
+              <span class="ic">⇪</span>Import statement
+            </button>
+            <button class="tile" data-v="expenses">
+              <span class="ic">☰</span>Add expense
+            </button>
+            <button class="tile" data-v="plan">
+              <span class="ic">◎</span>Budget and goal
+            </button>
+            <button class="tile" data-v="recurring">
+              <span class="ic">↻</span>Recurring bills
+            </button>
+            <button class="tile" data-v="streaks">
+              <span class="ic">✦</span>Streaks
+            </button>
+          </div>
+          <div class="stath">
+            <h2>Statistics</h2>
+            <div class="pills">
+              <button data-r="7" class="on">Last 7 days</button
+              ><button data-r="14">Last 14 days</button
+              ><button data-r="30">Last 30 days</button
+              ><button data-r="365">Last 1 year</button>
+            </div>
+          </div>
+          <div class="g3">
+            <div class="card">
+              <h2>Spending</h2>
+              <div class="lbl" id="apk"></div>
+              <svg
+                class="area"
+                id="area"
+                viewBox="0 0 400 140"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              ></svg>
+              <div class="alab" id="alab"></div>
+            </div>
+            <div class="card">
+              <h2>Budget used</h2>
+              <div class="lbl" id="dnl"></div>
+              <div class="dnw">
+                <svg class="dn" id="dn" viewBox="0 0 36 36" aria-hidden="true">
+                  <g transform="rotate(-90 18 18)">
+                    <circle class="dtr" cx="18" cy="18" r="15.915" />
+                    <circle
+                      class="dpr"
+                      id="dnp"
+                      cx="18"
+                      cy="18"
+                      r="15.915"
+                      stroke-dasharray="0 100"
+                    />
+                  </g>
+                  <text
+                    class="dt"
+                    id="dnt"
+                    x="18"
+                    y="20.5"
+                    text-anchor="middle"
+                  ></text>
+                </svg>
+              </div>
+              <div class="lbl" id="dns" style="text-align: center"></div>
+            </div>
+            <div class="card">
+              <h2 id="bth">Daily spending</h2>
+              <div class="lbl" id="btl">Last 7 days</div>
+              <div class="bars" id="bars"></div>
+            </div>
+          </div>
+          <div class="g33">
+            <div class="card">
+              <h2>Where it went</h2>
+              <div id="cats"></div>
+            </div>
+            <div class="card">
+              <h2>Savings goals</h2>
+              <div id="gmini"></div>
+            </div>
+            <div class="card">
+              <h2>Streak</h2>
+              <div class="tally" id="tally1" aria-hidden="true"></div>
+              <div class="lbl" id="ssum" style="margin-top: 10px"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="v-expenses" hidden>
+          <div class="grid two">
+            <div class="card">
+              <h2>Add an expense</h2>
+              <form id="fexp" class="fg">
+                <label
+                  >Amount<input
+                    id="amt"
+                    type="number"
+                    min="0.01"
+                    step="any"
+                    inputmode="decimal"
+                    required
+                /></label>
+                <label>Date<input id="date" type="date" required /></label>
+                <label class="full"
+                  >What was it for?<input
+                    id="desc"
+                    maxlength="80"
+                    required
+                    placeholder="Groceries"
+                /></label>
+                <label class="full">Category<select id="cat"></select></label>
+                <div class="full">
+                  <button type="submit">Save expense</button>
+                </div>
+              </form>
+            </div>
+            <div class="card hist">
+              <h2>History</h2>
+              <div id="flt" class="fg">
+                <label>Category<select id="fc"></select></label
+                ><label
+                  >Type<select id="fau">
+                    <option value="">All</option>
+                    <option value="manual">Manual and imported</option>
+                    <option value="auto">Automatic (recurring)</option>
+                  </select></label
+                ><label>From<input id="ff" type="date" /></label
+                ><label>To<input id="ft" type="date" /></label
+                ><label
+                  >Min amount<input
+                    id="fmn"
+                    type="number"
+                    min="0"
+                    step="any" /></label
+                ><label
+                  >Max amount<input
+                    id="fmx"
+                    type="number"
+                    min="0"
+                    step="any" /></label
+                ><label
+                  >Sort by<select id="fso">
+                    <option value="new">Newest first</option>
+                    <option value="old">Oldest first</option>
+                    <option value="hi">Highest amount</option>
+                    <option value="lo">Lowest amount</option>
+                  </select></label
+                >
+                <div style="align-self: end">
+                  <button type="button" class="ghost" id="fclr">
+                    Clear filters
+                  </button>
+                </div>
+              </div>
+              <p class="lbl" id="fsum"></p>
+              <div class="ledger" id="list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="v-import" hidden>
+          <div class="card">
+            <h2>Import a bank statement</h2>
+            <label class="dz" id="dz"
+              ><b>Drop your statement here, or choose a file</b
+              ><span
+                >CSV, Excel (.xls, .xlsx, .xlsm, .xltx) or PDF from your
+                bank.</span
+              ><input
+                id="sfile"
+                type="file"
+                accept=".csv,.tsv,.txt,.xls,.xlsx,.xlsm,.xltx,.pdf"
+                hidden
+            /></label>
+            <label style="margin-top: 12px"
+              >Or paste the statement text<textarea
+                id="stext"
+                placeholder="Date,Description,Debit,Credit,Balance"
+              ></textarea>
+            </label>
+            <div class="row" style="margin-top: 10px">
+              <button id="sgo">Analyse statement</button>
+            </div>
+            <p class="err" id="ierr" role="alert"></p>
+            <p class="lbl">
+              Money going out becomes expenses. Dates are read as
+              day/month/year. Money coming in is summarised but not imported.
+              Excel and PDF readers load from the internet the first time.
+            </p>
+          </div>
+          <div id="ires" style="margin-top: 14px"></div>
+        </section>
+
+        <section id="v-plan" hidden>
+          <div class="grid two">
+            <div class="card">
+              <h2>Budget</h2>
+              <form id="fbud" class="fg">
+                <label
+                  >Period<select id="bp">
+                    <option value="day">Daily</option>
+                    <option value="week">Weekly</option>
+                    <option value="month">Monthly</option>
+                  </select></label
+                >
+                <label
+                  >Amount<input
+                    id="ba"
+                    type="number"
+                    min="0"
+                    step="any"
+                    inputmode="decimal"
+                    required
+                /></label>
+                <div class="full">
+                  <button type="submit">Save budget</button>
+                </div>
+              </form>
+              <p class="lbl">
+                You get a warning at 80% and an alert when you go over. Weekly
+                and monthly budgets are split evenly across days for your
+                streak.
+              </p>
+            </div>
+            <div class="card">
+              <h2>Things I am saving for</h2>
+              <form id="fgoal" class="fg">
+                <label class="full"
+                  >What for?<input
+                    id="gn"
+                    maxlength="40"
+                    required
+                    placeholder="New laptop"
+                /></label>
+                <label
+                  >Target<input
+                    id="gt"
+                    type="number"
+                    min="1"
+                    step="any"
+                    required
+                /></label>
+                <label
+                  >Target date (optional)<input id="gd" type="date"
+                /></label>
+                <div class="full"><button type="submit">Add goal</button></div>
+              </form>
+              <div id="gbox" style="margin-top: 16px"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="v-recurring" hidden>
+          <div class="grid two">
+            <div class="card">
+              <h2>Add a monthly bill</h2>
+              <form id="frec" class="fg">
+                <label class="full"
+                  >Name<input
+                    id="rn"
+                    maxlength="40"
+                    required
+                    placeholder="Rent"
+                /></label>
+                <label
+                  >Amount<input
+                    id="ra"
+                    type="number"
+                    min="0.01"
+                    step="any"
+                    required
+                /></label>
+                <label
+                  >Day of month<input
+                    id="rd"
+                    type="number"
+                    min="1"
+                    max="31"
+                    value="1"
+                    required
+                /></label>
+                <label class="full">Category<select id="rc"></select></label>
+                <div class="full">
+                  <button type="submit">Add recurring expense</button>
+                </div>
+              </form>
+              <p class="lbl">
+                Each bill is logged automatically on its day, even when you are
+                offline. Pick any day from 1 to 31. In shorter months a bill set
+                for a day that does not exist is due on the last day of the
+                month.
+              </p>
+            </div>
+            <div class="card">
+              <h2>Your recurring bills</h2>
+              <div id="rlist"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="v-streaks" hidden>
+          <div class="grid two streak">
+            <div class="card">
+              <div class="lbl">On budget</div>
+              <div class="num" id="bn"></div>
+              <div
+                class="tally"
+                id="tally2"
+                aria-hidden="true"
+                style="margin: 12px 0"
+              ></div>
+              <div class="lbl" id="bnote"></div>
+            </div>
+            <div class="card">
+              <div class="lbl">Saving</div>
+              <div class="num" id="sn"></div>
+              <div
+                class="tally"
+                id="tally3"
+                aria-hidden="true"
+                style="margin: 12px 0"
+              ></div>
+              <div class="lbl" id="snote" style="margin-top: 12px"></div>
+            </div>
+          </div>
+          <h2 class="sec" id="bh">Badges</h2>
+          <div class="badges" id="badges"></div>
+        </section>
+        <section id="v-convert" hidden>
+          <div class="card">
+            <h2>Currency converter</h2>
+            <div class="fg">
+              <label class="full"
+                >Amount<input
+                  id="cvA"
+                  type="number"
+                  step="any"
+                  value="1" /></label
+              ><label>From<select id="cvF"></select></label
+              ><label>To<select id="cvT"></select></label>
+            </div>
+            <div class="lbl" id="cvN" style="margin-top: 6px"></div>
+            <div
+              class="num"
+              id="cvR"
+              style="margin-top: 14px; font-size: 30px"
+            ></div>
+          </div>
+        </section>
+
+        <section id="v-reports" hidden>
+          <div
+            class="row noprint"
+            style="margin-bottom: 14px; align-items: end"
+          >
+            <label>Month<input type="month" id="rm" /></label
+            ><button id="rpdf">Export PDF</button>
+          </div>
+          <div id="rep"></div>
+          <div class="grid two noprint" style="margin-top: 14px">
+            <div class="card">
+              <h2>Add income</h2>
+              <form id="finc" class="fg">
+                <label
+                  >Amount<input
+                    id="ia"
+                    type="number"
+                    min="0.01"
+                    step="any"
+                    required /></label
+                ><label>Date<input id="idt" type="date" required /></label
+                ><label class="full"
+                  >Source<input
+                    id="is"
+                    maxlength="60"
+                    required
+                    placeholder="Salary"
+                /></label>
+                <div class="full">
+                  <button type="submit">Save income</button>
+                </div>
+              </form>
+            </div>
+            <div class="card">
+              <h2>Income this month</h2>
+              <div id="ilist"></div>
+            </div>
+          </div>
+        </section>
+        <section id="v-security" hidden>
+          <div class="grid two">
+            <div class="card">
+              <h2>Two-factor authentication</h2>
+              <div id="sec2fa"></div>
+            </div>
+            <div class="card">
+              <h2>Biometric app lock</h2>
+              <div id="secbio"></div>
+            </div>
+            <div class="card">
+              <h2>Devices</h2>
+              <p class="lbl">
+                Devices signed in to this account. The list lives in your
+                encrypted data, so other devices see changes after they restore
+                or sync a backup.
+              </p>
+              <div id="secdev"></div>
+            </div>
+            <div class="card">
+              <h2>Audit log</h2>
+              <p class="lbl">
+                Security activity from the last 7 days. Older entries are
+                deleted automatically.
+              </p>
+              <div class="irs" id="seclog"></div>
+            </div>
+          </div>
+        </section>
+        <section id="v-settings" hidden>
+          <div class="grid two">
+            <div class="grid two streak">
+              <div class="card">
+                <h2>Profile</h2>
+                <form id="fpro" class="fg">
+                  <label>First name<input id="pf" required /></label
+                  ><label>Last name<input id="pl" required /></label>
+                  <label class="full">Currency<select id="pc"></select></label>
+                  <div class="full">
+                    <button type="submit">Save profile</button>
+                  </div>
+                </form>
+                <p class="lbl">
+                  Changing the currency converts all your saved amounts
+                  (expenses, budget, savings goals and recurring bills) at
+                  today's exchange rate. This needs an internet connection.
+                </p>
+              </div>
+              <div class="card">
+                <h2>Categories</h2>
+                <p class="lbl">
+                  Add your own categories, rename them or change their colour.
+                  The built-in ones stay as they are. Deleting a category moves
+                  its expenses to Other.
+                </p>
+                <form id="fcat" class="row">
+                  <input
+                    id="cn"
+                    maxlength="30"
+                    placeholder="New category"
+                    required
+                    style="flex: 1"
+                  /><input
+                    id="ccol"
+                    type="color"
+                    value="#6f66e6"
+                    style="width: 48px; padding: 2px"
+                    aria-label="Colour"
+                  /><button type="submit">Add</button>
+                </form>
+                <div id="clist"></div>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Storage on this device</h2>
+              <p class="lbl">
+                Keep an encrypted copy of your data in a folder on your device,
+                outside the browser. Choose a folder once and Expensiz updates
+                the file after every change.
+              </p>
+              <div class="row">
+                <button id="dpick">Choose folder</button
+                ><button class="ghost" id="dallow">Allow access</button
+                ><button class="ghost" id="drest">Restore from folder</button>
+                <button class="ghost" id="dexp">Export backup file</button
+                ><button class="ghost" id="dimp">Import backup file</button
+                ><input id="dfile" type="file" accept=".json" hidden />
+              </div>
+              <p class="lbl" id="dst"></p>
+              <div class="danger">
+                <h3>Danger zone</h3>
+                <p class="lbl">
+                  Deletes all your Expensiz data from this device, your device
+                  folder and your cloud backup. Your account stays so you can
+                  start fresh. This cannot be undone.
+                </p>
+                <button class="dng" id="wipe">Delete all data</button>
+              </div>
+            </div>
+            <div class="card">
+              <h2>Bill reminders</h2>
+              <p class="lbl">
+                Reminders start 3 days before a recurring bill is due. They show
+                on Overview, and as a browser notification while Expensiz is
+                open.
+              </p>
+              <button id="rem">Turn on notifications</button>
+              <p class="lbl" id="remst"></p>
+            </div>
+            <div class="card">
+              <h2>Cloud backup (MEGA)</h2>
+              <p class="lbl">
+                Your data is encrypted on this device with a key made from your
+                Expensiz password before anything is stored or uploaded. MEGA
+                only holds scrambled data. If you forget your Expensiz password,
+                a backup cannot be recovered.
+              </p>
+              <form id="fmega" class="fg">
+                <label class="full"
+                  >Your MEGA email (same as your Expensiz email)<input
+                    id="me"
+                    type="email"
+                    readonly
+                    required /></label
+                ><label class="full"
+                  >Your MEGA password<input id="mp" type="password" required
+                /></label>
+                <div class="full row">
+                  <button type="submit">Connect and back up</button
+                  ><button type="button" id="mnow" hidden>Back up now</button
+                  ><button type="button" class="ghost" id="mrest">
+                    Restore backup</button
+                  ><button type="button" class="ghost" id="mdis">
+                    Disconnect
+                  </button>
+                </div>
+              </form>
+              <div id="mq" hidden style="margin: 12px 0">
+                <div class="row" style="justify-content: space-between">
+                  <strong>MEGA storage</strong
+                  ><span class="lbl" id="mqt"></span>
+                </div>
+                <div class="bar" style="height: 12px">
+                  <i id="mqb" style="width: 0"></i>
+                </div>
+                <div class="row" style="justify-content: space-between">
+                  <span class="lbl" id="mqu"></span
+                  ><span class="lbl" id="mqf"></span>
+                </div>
+              </div>
+              <p class="lbl" id="bst"></p>
+              <label class="chk" id="mautoW" hidden
+                ><input id="mauto" type="checkbox" /> Auto backup: back up
+                automatically whenever you are online</label
+              >
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div id="lock" hidden>
+      <div class="card">
+        <h1>Expensiz is locked</h1>
+        <p class="lbl" id="lkm">
+          Verify it is you with Windows Hello or your device lock.
+        </p>
+        <div class="row">
+          <button id="lku">Unlock</button
+          ><button class="ghost" id="lkr">Remove lock</button
+          ><button class="ghost" id="lko">Sign out</button>
+        </div>
+      </div>
+    </div>
+    <dialog id="ded">
+      <form id="fed" class="fg">
+        <h2 class="full">Edit expense</h2>
+        <label
+          >Amount<input
+            id="ea"
+            type="number"
+            min="0.01"
+            step="any"
+            required /></label
+        ><label>Date<input id="edt" type="date" required /></label
+        ><label class="full"
+          >What was it for?<input id="edc" maxlength="80" required /></label
+        ><label class="full">Category<select id="ec"></select></label>
+        <div class="full row">
+          <button type="submit">Save changes</button
+          ><button type="button" class="ghost" id="edx">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+    <canvas id="conf" aria-hidden="true"></canvas>
+    <dialog id="pwd">
+      <form id="fpwd" method="dialog">
+        <h2>Confirm your password</h2>
+        <p class="lbl">Enter your Expensiz password to continue.</p>
+        <label
+          >Password<input
+            id="pwi"
+            type="password"
+            autocomplete="current-password"
+            required
+        /></label>
+        <p class="err" id="pwe" role="alert"></p>
+        <div class="row">
+          <button type="submit">Confirm</button
+          ><button type="button" class="ghost" id="pwc">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="cong">
+      <h2>🎉 Congratulations!</h2>
+      <p id="congT"></p>
+      <button id="congOk">Great</button>
+    </dialog>
+    <div id="toast"></div>
+
+    <script>
+      /* ---------- Config: your MEGA account stores the user accounts ---------- */
+      const CFG = { API_URL: "http://localhost:8787" }; // address of your Expensiz server, for example 'https://expensiz-api.example.com'. No MEGA login goes here.
+      const $ = (id) => document.getElementById(id);
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const LS = {
+        get(k, d) {
+          try {
+            const v = JSON.parse(localStorage.getItem(k));
+            return v == null ? d : v;
+          } catch (e) {
+            return d;
+          }
+        },
+        set(k, v) {
+          try {
+            localStorage.setItem(k, JSON.stringify(v));
+          } catch (e) {}
+        },
+      };
+      const iso = (d) =>
+        d.getFullYear() +
+        "-" +
+        String(d.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(d.getDate()).padStart(2, "0");
+      const today = () => iso(new Date());
+      const addDays = (s, k) => {
+        const d = new Date(s + "T00:00:00");
+        d.setDate(d.getDate() + k);
+        return iso(d);
+      };
+      const wkStart = (s) =>
+        addDays(s, -((new Date(s + "T00:00:00").getDay() + 6) % 7));
+      const dim = (s) => new Date(+s.slice(0, 4), +s.slice(5, 7), 0).getDate();
+      const tot = (a) => a.reduce((s, e) => s + e.amt, 0);
+      const DEF = [
+        ["Groceries & Food", "#6fae3c"],
+        ["Dining Out", "#d9622b"],
+        ["Transport", "#3f7fe0"],
+        ["Fuel", "#2f5fb0"],
+        ["Rent", "#8a5be0"],
+        ["Home & Repairs", "#a0764b"],
+        ["Utilities", "#2fa8a0"],
+        ["Internet & Airtime", "#1fa3c9"],
+        ["Subscriptions", "#9b59b6"],
+        ["Entertainment", "#e0518f"],
+        ["Health", "#d94b4b"],
+        ["Personal Care", "#e58bb0"],
+        ["Education", "#3b9c6a"],
+        ["Insurance", "#5b7083"],
+        ["Shopping", "#c9a227"],
+        ["Clothing", "#b5651d"],
+        ["Travel", "#17a2b8"],
+        ["Gifts & Donations", "#e0a526"],
+        ["Family & Kids", "#f08a8a"],
+        ["Pets", "#8d6e63"],
+        ["Fees & Charges", "#607d8b"],
+        ["Loans & Debt", "#b03a48"],
+        ["Savings & Investments", "#2e8b57"],
+        ["Business", "#4c6ef5"],
+        ["Other", "#7f8a85"],
+      ];
+      const KW = {
+        "Fees & Charges": [
+          "sms alert",
+          "alert fee",
+          "maintenance fee",
+          "account maintenance",
+          "card maintenance",
+          "commission",
+          "stamp duty",
+          "vat",
+          "levy",
+          "service charge",
+          "bank charge",
+          "charges",
+          "transfer fee",
+          "processing fee",
+          "cot",
+          "penalty",
+          "atm fee",
+          "card fee",
+          "withdrawal fee",
+          "nip fee",
+          "e-levy",
+          "emtl",
+          "reversal fee",
+          "token fee",
+          "statement fee",
+        ],
+        "Loans & Debt": [
+          "loan",
+          "repayment",
+          "instalment",
+          "installment",
+          "credit card payment",
+          "overdraft",
+          "debt",
+          "mortgage",
+          "fairmoney",
+          "palmcredit",
+          "renmoney",
+          "quickcheck",
+          "branch loan",
+          "carbon loan",
+          "paylater",
+          "buy now pay later",
+          "bnpl",
+          "interest charge",
+          "moniepoint loan",
+          "opay loan",
+        ],
+        "Savings & Investments": [
+          "piggyvest",
+          "cowrywise",
+          "risevest",
+          "bamboo",
+          "trove",
+          "chaka",
+          "savings",
+          "invest",
+          "treasury bill",
+          "mutual fund",
+          "stocks",
+          "crypto",
+          "binance",
+          "luno",
+          "quidax",
+          "ajo",
+          "esusu",
+          "cooperative",
+          "coop",
+          "fixed deposit",
+          "bond",
+          "money market",
+          "pension",
+          "rsa contribution",
+          "target savings",
+          "safelock",
+        ],
+        Insurance: [
+          "insurance",
+          "premium",
+          "hmo",
+          "leadway",
+          "axa",
+          "aiico",
+          "nem insurance",
+          "cornerstone",
+          "sunu",
+          "policy",
+          "assurance",
+          "curacel",
+          "car insurance",
+          "life cover",
+        ],
+        Rent: [
+          "rent",
+          "landlord",
+          "landlady",
+          "lease",
+          "tenancy",
+          "house rent",
+          "apartment",
+          "caution fee",
+          "agency fee",
+          "legal fee house",
+          "shop rent",
+          "mortgage rent",
+        ],
+        Fuel: [
+          "fuel",
+          "petrol",
+          "diesel",
+          "gas station",
+          "filling station",
+          "totalenergies",
+          "total energies",
+          "conoil",
+          "oando",
+          "mobil",
+          "nnpc",
+          "forte oil",
+          "ardova",
+          "cooking gas",
+          "lpg",
+          "gas refill",
+          "pms",
+        ],
+        "Internet & Airtime": [
+          "airtime",
+          "data bundle",
+          "data plan",
+          "data sub",
+          "data purchase",
+          "mtn",
+          "glo",
+          "airtel",
+          "9mobile",
+          "etisalat",
+          "spectranet",
+          "smile",
+          "ipnx",
+          "fibre",
+          "broadband",
+          "wifi",
+          "wi-fi",
+          "internet",
+          "recharge",
+          "top up",
+          "topup",
+          "vtu",
+          "starlink",
+          "swift network",
+          "data",
+          "mb",
+          "gb",
+        ],
+        Utilities: [
+          "electricity",
+          "electric",
+          "nepa",
+          "phcn",
+          "ikedc",
+          "ekedc",
+          "aedc",
+          "phed",
+          "eedc",
+          "kedco",
+          "jed",
+          "ibedc",
+          "prepaid",
+          "postpaid",
+          "meter",
+          "nepa bill",
+          "light bill",
+          "power bill",
+          "water bill",
+          "water",
+          "waste",
+          "refuse",
+          "lawma",
+          "lasepa",
+          "gas bill",
+          "disco",
+          "estate dues",
+          "utility",
+          "utilities",
+          "bill payment",
+          "sewage",
+        ],
+        Subscriptions: [
+          "netflix",
+          "spotify",
+          "apple music",
+          "youtube premium",
+          "showmax",
+          "dstv",
+          "gotv",
+          "startimes",
+          "prime video",
+          "amazon prime",
+          "disney",
+          "hbo",
+          "canva",
+          "capcut",
+          "chatgpt",
+          "openai",
+          "claude",
+          "notion",
+          "dropbox",
+          "icloud",
+          "google one",
+          "adobe",
+          "microsoft 365",
+          "office 365",
+          "github",
+          "audiomack",
+          "boomplay",
+          "tidal",
+          "deezer",
+          "patreon",
+          "substack",
+          "linkedin premium",
+          "vpn",
+          "nordvpn",
+          "expressvpn",
+          "membership",
+          "subscription",
+          "renewal",
+          "annual plan",
+          "monthly plan",
+          "zoom",
+          "slack",
+          "grammarly",
+          "duolingo",
+          "apple.com/bill",
+          "google play",
+          "app store",
+        ],
+        Travel: [
+          "flight",
+          "airline",
+          "air peace",
+          "arik",
+          "ibom air",
+          "overland",
+          "booking.com",
+          "airbnb",
+          "hotel",
+          "hostel",
+          "lodge",
+          "resort",
+          "visa fee",
+          "visa",
+          "passport",
+          "airport",
+          "vacation",
+          "holiday",
+          "tour",
+          "ethiopian airlines",
+          "british airways",
+          "emirates",
+          "qatar airways",
+          "expedia",
+          "travelstart",
+          "wakanow",
+          "tripadvisor",
+          "luggage",
+          "boarding",
+          "itinerary",
+        ],
+        Transport: [
+          "uber",
+          "bolt",
+          "indrive",
+          "lyft",
+          "taxi",
+          "cab",
+          "ride",
+          "okada",
+          "keke",
+          "brt",
+          "danfo",
+          "bus",
+          "train",
+          "fare",
+          "toll",
+          "ferry",
+          "car wash",
+          "parking",
+          "mechanic",
+          "vulcanizer",
+          "tyre",
+          "tire",
+          "spare part",
+          "road tax",
+          "vehicle",
+          "particulars",
+          "driver",
+          "gokada",
+          "rida",
+          "metro",
+          "transport",
+          "shuttle",
+          "lagos bus",
+          "trek",
+        ],
+        Health: [
+          "pharmacy",
+          "chemist",
+          "drug",
+          "drugs",
+          "medicine",
+          "medication",
+          "hospital",
+          "clinic",
+          "doctor",
+          "dental",
+          "dentist",
+          "optician",
+          "eye test",
+          "lab test",
+          "laboratory",
+          "diagnostic",
+          "scan",
+          "xray",
+          "x-ray",
+          "surgery",
+          "maternity",
+          "antenatal",
+          "physio",
+          "therapy",
+          "therapist",
+          "counselling",
+          "counseling",
+          "gym",
+          "fitness",
+          "yoga",
+          "vitamin",
+          "supplement",
+          "health",
+          "medic",
+          "paediatric",
+          "pediatric",
+          "teleconsult",
+          "healthplus",
+          "medplus",
+          "prescription",
+          "consultation",
+        ],
+        "Personal Care": [
+          "salon",
+          "barber",
+          "barbing",
+          "hair",
+          "braids",
+          "weave",
+          "wig",
+          "makeup",
+          "make-up",
+          "nails",
+          "manicure",
+          "pedicure",
+          "spa",
+          "massage",
+          "skincare",
+          "cosmetics",
+          "perfume",
+          "lashes",
+          "beauty",
+          "grooming",
+          "waxing",
+          "shaving",
+          "toiletries",
+          "deodorant",
+          "lotion",
+          "haircut",
+        ],
+        Education: [
+          "school fees",
+          "tuition",
+          "school",
+          "university",
+          "college",
+          "polytechnic",
+          "waec",
+          "neco",
+          "jamb",
+          "nabteb",
+          "exam fee",
+          "exam",
+          "textbook",
+          "books",
+          "stationery",
+          "course",
+          "training",
+          "bootcamp",
+          "udemy",
+          "coursera",
+          "alison",
+          "lesson",
+          "tutor",
+          "tutorial",
+          "seminar",
+          "workshop",
+          "certification",
+          "scholarship",
+          "library",
+          "pta",
+          "uniform",
+          "nysc",
+          "ielts",
+          "toefl",
+          "gre",
+          "admission",
+          "matriculation",
+          "project defense",
+        ],
+        "Family & Kids": [
+          "kids",
+          "children",
+          "child",
+          "baby",
+          "diaper",
+          "diapers",
+          "nappy",
+          "toys",
+          "toy",
+          "daycare",
+          "creche",
+          "nanny",
+          "babysitter",
+          "allowance",
+          "pocket money",
+          "upkeep",
+          "mum",
+          "mom",
+          "mother",
+          "dad",
+          "father",
+          "parents",
+          "sibling",
+          "brother",
+          "sister",
+          "wife",
+          "husband",
+          "family",
+          "pampers",
+          "cerelac",
+          "nursery",
+          "school bus",
+        ],
+        Pets: [
+          "pet",
+          "pets",
+          "dog",
+          "puppy",
+          "vet",
+          "veterinary",
+          "kennel",
+          "pet food",
+          "cat",
+          "kitten",
+          "aquarium",
+          "fish food",
+          "pet shop",
+          "dog food",
+        ],
+        "Gifts & Donations": [
+          "gift",
+          "gifts",
+          "donation",
+          "donate",
+          "charity",
+          "tithe",
+          "tithes",
+          "offering",
+          "church",
+          "mosque",
+          "zakat",
+          "sadaqa",
+          "alms",
+          "sponsor",
+          "wedding",
+          "aso ebi",
+          "asoebi",
+          "birthday",
+          "celebration",
+          "owambe",
+          "condolence",
+          "burial",
+          "funeral",
+          "harvest",
+          "thanksgiving",
+          "crowdfund",
+          "gofundme",
+          "contribution",
+          "anniversary",
+          "flowers",
+          "bouquet",
+          "welfare",
+          "honorarium",
+        ],
+        Clothing: [
+          "cloth",
+          "clothes",
+          "clothing",
+          "shirt",
+          "tshirt",
+          "t-shirt",
+          "trouser",
+          "jeans",
+          "dress",
+          "gown",
+          "skirt",
+          "suit",
+          "jacket",
+          "hoodie",
+          "sneaker",
+          "sneakers",
+          "shoe",
+          "shoes",
+          "sandals",
+          "slippers",
+          "bag",
+          "handbag",
+          "belt",
+          "watch",
+          "jewelry",
+          "jewellery",
+          "tailor",
+          "tailoring",
+          "fabric",
+          "ankara",
+          "lace",
+          "aso oke",
+          "sewing",
+          "zara",
+          "h&m",
+          "shein",
+          "nike",
+          "adidas",
+          "puma",
+          "fashion",
+          "boutique",
+          "thrift",
+          "okrika",
+        ],
+        "Dining Out": [
+          "restaurant",
+          "cafe",
+          "café",
+          "coffee",
+          "starbucks",
+          "kfc",
+          "mcdonald",
+          "dominos",
+          "domino",
+          "pizza",
+          "burger",
+          "shawarma",
+          "suya",
+          "jollof",
+          "chicken republic",
+          "mr biggs",
+          "mr bigg",
+          "sweet sensation",
+          "tastee",
+          "tantalizers",
+          "kilimanjaro",
+          "the place",
+          "cold stone",
+          "cold rock",
+          "ice cream",
+          "bakery",
+          "pastry",
+          "pastries",
+          "buka",
+          "canteen",
+          "eatery",
+          "bistro",
+          "grill",
+          "barbecue",
+          "bbq",
+          "takeaway",
+          "takeout",
+          "take away",
+          "delivery",
+          "chowdeck",
+          "glovo",
+          "jumia food",
+          "bolt food",
+          "food court",
+          "lunch",
+          "dinner",
+          "breakfast",
+          "brunch",
+          "snack",
+          "snacks",
+          "drink",
+          "drinks",
+          "juice",
+          "smoothie",
+          "tea",
+          "wine",
+          "beer",
+          "pub",
+          "amala",
+          "pounded yam",
+          "fufu",
+          "small chops",
+          "chops",
+          "pepper soup",
+          "puff puff",
+          "uber eats",
+          "ubereats",
+          "doordash",
+          "deliveroo",
+          "grubhub",
+          "dine",
+          "meal",
+        ],
+        "Groceries & Food": [
+          "grocer",
+          "grocery",
+          "groceries",
+          "supermarket",
+          "shoprite",
+          "spar",
+          "ebeano",
+          "justrite",
+          "market",
+          "mile 12",
+          "mile12",
+          "foodstuff",
+          "provisions",
+          "provision",
+          "vegetable",
+          "vegetables",
+          "tomato",
+          "pepper",
+          "onion",
+          "rice",
+          "beans",
+          "garri",
+          "yam",
+          "plantain",
+          "flour",
+          "semo",
+          "egg",
+          "eggs",
+          "milk",
+          "bread",
+          "butter",
+          "sugar",
+          "salt",
+          "soda",
+          "groundnut oil",
+          "vegetable oil",
+          "palm oil",
+          "indomie",
+          "noodles",
+          "spaghetti",
+          "pasta",
+          "fish",
+          "meat",
+          "chicken",
+          "turkey",
+          "beef",
+          "goat",
+          "fruit",
+          "fruits",
+          "sachet",
+          "baking",
+          "cereal",
+          "hypermarket",
+          "wholesale",
+          "soap",
+          "detergent",
+          "omo",
+          "sunlight",
+          "tissue",
+          "toilet roll",
+          "bleach",
+          "disinfectant",
+          "harpic",
+          "mart",
+          "pantry",
+          "food",
+          "feeding",
+          "eating",
+          "cook",
+          "cooking",
+          "kitchen",
+          "catering",
+          "caterer",
+          "chef",
+          "meal prep",
+          "ingredients",
+          "recipe",
+        ],
+        Entertainment: [
+          "movie",
+          "cinema",
+          "filmhouse",
+          "genesis cinema",
+          "silverbird",
+          "imax",
+          "ticket",
+          "concert",
+          "festival",
+          "club",
+          "nightclub",
+          "lounge",
+          "bar",
+          "party",
+          "game",
+          "gaming",
+          "playstation",
+          "xbox",
+          "steam",
+          "ps5",
+          "bowling",
+          "arcade",
+          "amusement",
+          "theme park",
+          "karaoke",
+          "betting",
+          "bet9ja",
+          "sportybet",
+          "nairabet",
+          "1xbet",
+          "lottery",
+          "casino",
+          "fun",
+          "comedy",
+          "show tickets",
+          "event",
+          "outing",
+          "hangout",
+          "paintball",
+          "museum",
+          "zoo",
+        ],
+        "Home & Repairs": [
+          "plumber",
+          "electrician",
+          "carpenter",
+          "repair",
+          "repairs",
+          "maintenance",
+          "paint",
+          "furniture",
+          "mattress",
+          "generator",
+          "gen repair",
+          "tiles",
+          "cement",
+          "hardware",
+          "ikea",
+          "decor",
+          "curtain",
+          "cleaning",
+          "cleaner",
+          "laundry",
+          "dry clean",
+          "fumigation",
+          "roofing",
+          "builder",
+          "building",
+          "welder",
+          "ac repair",
+          "installation",
+          "home",
+          "household",
+          "bedding",
+          "kitchenware",
+          "utensils",
+        ],
+        Shopping: [
+          "shop",
+          "shopping",
+          "mall",
+          "jumia",
+          "konga",
+          "temu",
+          "aliexpress",
+          "amazon",
+          "ebay",
+          "alibaba",
+          "etsy",
+          "walmart",
+          "costco",
+          "best buy",
+          "slot",
+          "electronics",
+          "phone",
+          "laptop",
+          "gadget",
+          "charger",
+          "headphones",
+          "earbuds",
+          "tv",
+          "television",
+          "appliance",
+          "fridge",
+          "freezer",
+          "blender",
+          "store",
+          "jiji",
+          "olist",
+          "palms",
+          "circle mall",
+          "pep",
+          "mr price",
+          "woolworths",
+          "dealz",
+          "accessories",
+          "gadgets",
+          "online order",
+        ],
+        Business: [
+          "business",
+          "invoice",
+          "supplier",
+          "stock purchase",
+          "inventory",
+          "office",
+          "cac",
+          "registration",
+          "company",
+          "payroll",
+          "salary payment",
+          "staff",
+          "employee",
+          "contractor",
+          "freelance",
+          "client",
+          "packaging",
+          "printing",
+          "print",
+          "branding",
+          "logo",
+          "website",
+          "domain",
+          "hosting",
+          "godaddy",
+          "namecheap",
+          "facebook ads",
+          "meta ads",
+          "google ads",
+          "advert",
+          "advertising",
+          "marketing",
+          "tax",
+          "firs",
+          "withholding",
+          "accounting",
+          "bookkeeping",
+          "legal",
+          "lawyer",
+          "solicitor",
+          "consultant",
+          "consulting",
+          "courier",
+          "dhl",
+          "fedex",
+          "ups",
+          "gig logistics",
+          "dispatch",
+          "shipping",
+          "waybill",
+          "logistics",
+          "coworking",
+          "cowork",
+          "workspace",
+          "paystack",
+          "flutterwave",
+          "stripe",
+        ],
+      };
+      const esc2 = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const KWR = Object.entries(KW).map(([c, w]) => [
+        c,
+        new RegExp(
+          "(?:^|[^a-z0-9])(?:" +
+            w
+              .map((x) => esc2(x) + (x.length <= 5 ? "(?![a-z0-9])" : ""))
+              .join("|") +
+            ")",
+          "i",
+        ),
+      ]);
+      const guess = (d) => {
+        for (const [c, r] of KWR) if (r.test(d)) return c;
+        return null;
+      };
+
+      const CURS = [
+        "NGN",
+        "USD",
+        "GBP",
+        "EUR",
+        "GHS",
+        "KES",
+        "ZAR",
+        "CAD",
+        "AUD",
+        "AED",
+        "INR",
+        "JPY",
+        "CNY",
+        "CHF",
+        "XOF",
+        "EGP",
+      ];
+      let U = null,
+        D = null,
+        touched = false;
+      const CATS = () =>
+        DEF.concat(((D && D.cats) || []).map((x) => [x.n, x.c]));
+      const colorOf = (n) =>
+        (CATS().find((c) => c[0] === n) || [0, "#7f8a85"])[1];
+      const fmt = (n) =>
+        new Intl.NumberFormat("en", {
+          style: "currency",
+          currency: U ? U.cur : "NGN",
+          maximumFractionDigits: 0,
+        }).format(n);
+      function toast(m) {
+        const t = $("toast");
+        t.textContent = m;
+        t.style.display = "block";
+        clearTimeout(toast.h);
+        toast.h = setTimeout(() => (t.style.display = "none"), 3000);
+      }
+
+      /* ---------- Theme ---------- */
+      function theme(t) {
+        document.documentElement.dataset.theme = t;
+        $("themeBtn").textContent = t === "dark" ? "Light" : "Dark";
+        LS.set("nl_theme", t);
+      }
+      theme(
+        LS.get(
+          "nl_theme",
+          matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light",
+        ),
+      );
+      $("themeBtn").onclick = () =>
+        theme(
+          document.documentElement.dataset.theme === "dark" ? "light" : "dark",
+        );
+
+      /* ---------- MEGA (needs internet; loaded only when signing up or first sign-in) ---------- */
+      const DEV = (() => {
+        let d = LS.get("nl_dev", null);
+        if (!d || !d.id) {
+          d = {
+            id: crypto.randomUUID
+              ? crypto.randomUUID()
+              : String(Date.now()) + Math.random(),
+            name:
+              (navigator.userAgentData && navigator.userAgentData.platform) ||
+              navigator.platform ||
+              "device",
+          };
+          LS.set("nl_dev", d);
+        }
+        return d;
+      })();
+      async function api(path, body) {
+        if (!CFG.API_URL)
+          throw new Error("The Expensiz server is not connected.");
+        let r;
+        try {
+          r = await fetch(CFG.API_URL + path, {
+            method: body ? "POST" : "GET",
+            headers: { "Content-Type": "application/json" },
+            body: body ? JSON.stringify(body) : undefined,
+          });
+        } catch (e) {
+          throw new Error(
+            "Could not reach the Expensiz server. Check your connection.",
+          );
+        }
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok)
+          throw new Error(j.error || "Something went wrong. Try again.");
+        return j;
+      }
+      const dueDate = (m, day) =>
+        m + "-" + String(Math.min(day, dim(m + "-01"))).padStart(2, "0");
+      function loadMega() {
+        return new Promise((res, rej) => {
+          if (window.mega) return res();
+          const s = document.createElement("script");
+          s.src =
+            "https://cdn.jsdelivr.net/npm/megajs@1/dist/main.browser-umd.js";
+          s.onload = res;
+          s.onerror = () =>
+            rej(
+              new Error(
+                "Could not reach MEGA. Check your connection and try again.",
+              ),
+            );
+          document.head.appendChild(s);
+        });
+      }
+
+      /* ---------- Accounts ---------- */
+      const b64 = (u) => {
+          let s = "";
+          for (let i = 0; i < u.length; i += 8192)
+            s += String.fromCharCode.apply(null, u.subarray(i, i + 8192));
+          return btoa(s);
+        },
+        unb = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+      async function hash(pw, salt) {
+        const k = await crypto.subtle.importKey(
+          "raw",
+          new TextEncoder().encode(pw),
+          "PBKDF2",
+          false,
+          ["deriveBits"],
+        );
+        return b64(
+          new Uint8Array(
+            await crypto.subtle.deriveBits(
+              { name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" },
+              k,
+              256,
+            ),
+          ),
+        );
+      }
+      async function signup() {
+        if (!navigator.onLine)
+          throw new Error("Creating an account needs an internet connection.");
+        const first = $("sfirst").value.trim(),
+          last = $("slast").value.trim(),
+          email = $("semail").value.trim().toLowerCase(),
+          pw = $("spw").value;
+        if (pw.length < 8)
+          throw new Error("Use a password of at least 8 characters.");
+        if (pw !== $("spw2").value)
+          throw new Error("The two passwords do not match.");
+        const u = LS.get("nl_users", {});
+        if (!CFG.API_URL && u[email])
+          throw new Error(
+            "An account with that email already exists. Sign in instead.",
+          );
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const acc = {
+          first,
+          last,
+          email,
+          cur: $("scur").value,
+          salt: b64(salt),
+          ksalt: b64(crypto.getRandomValues(new Uint8Array(16))),
+          hash: await hash(pw, salt),
+          created: today(),
+        };
+        if (CFG.API_URL) await api("/signup", { account: acc, dev: DEV });
+        acc.devs = [DEV.id];
+        u[email] = acc;
+        LS.set("nl_users", u);
+        await start(email, pw, true);
+      }
+      async function login() {
+        try {
+          await login0();
+        } catch (x) {
+          if (!/internet|reach|connect/i.test(x.message))
+            flog($("lemail").value.trim().toLowerCase());
+          throw x;
+        }
+      }
+      async function login0() {
+        const email = $("lemail").value.trim().toLowerCase(),
+          pw = $("lpw").value,
+          u = LS.get("nl_users", {});
+        let a = u[email];
+        if (CFG.API_URL && navigator.onLine) {
+          const s = await api("/salt?email=" + encodeURIComponent(email)),
+            proof = await hash(pw, unb(s.salt)),
+            r = await api("/login", { email, proof, dev: DEV });
+          a = Object.assign({}, r.account, { hash: proof });
+          u[email] = a;
+          LS.set("nl_users", u);
+        } else {
+          if (CFG.API_URL && (!a || !(a.devs || []).includes(DEV.id)))
+            throw new Error(
+              "Signing in on a new device needs an internet connection.",
+            );
+          if (!a || (await hash(pw, unb(a.salt))) !== a.hash)
+            throw new Error("Email or password is incorrect.");
+        }
+        await start(email, pw);
+        if ($("stay").checked) {
+          try {
+            await idb("put", "key:" + email, KEY);
+            LS.set("nl_stay", { email, exp: Date.now() + 30 * 864e5 });
+          } catch (e) {
+            toast("Could not keep you signed in on this device.");
+          }
+        } else LS.set("nl_stay", null);
+      }
+      function authForm(fn) {
+        return async (e) => {
+          e.preventDefault();
+          const b = e.target.querySelector("button[type=submit]");
+          $("aerr").textContent = "";
+          b.disabled = true;
+          try {
+            await fn();
+          } catch (x) {
+            $("aerr").textContent = x.message;
+          }
+          b.disabled = false;
+        };
+      }
+      $("fin").onsubmit = authForm(login);
+      $("fup").onsubmit = authForm(signup);
+      document.querySelectorAll("[data-tab]").forEach(
+        (b) =>
+          (b.onclick = () => {
+            document
+              .querySelectorAll("[data-tab]")
+              .forEach((x) => x.classList.toggle("on", x === b));
+            $("fin").hidden = b.dataset.tab !== "in";
+            $("fup").hidden = b.dataset.tab !== "up";
+            $("aerr").textContent = "";
+          }),
+      );
+      $("scur").innerHTML = CURS.map((c) => `<option>${c}</option>`).join("");
+      $("out").onclick = async () => {
+        if (D && D.sec) {
+          devUp(false);
+          await logS("Signed out");
+        }
+        const s = LS.get("nl_stay", null);
+        LS.set("nl_stay", null);
+        try {
+          if (s) await idb("del", "key:" + s.email);
+        } catch (e) {}
+        location.reload();
+      };
+
+      /* ---------- Per-user data (stays on this device, works offline) ---------- */
+      let KEY = null,
+        ust = null,
+        pend = false,
+        btm;
+      const blank = () => ({
+        exp: [],
+        bud: { p: "month", a: 0 },
+        goals: [],
+        con: [],
+        rec: [],
+        bestB: 0,
+        bestS: 0,
+        mega: null,
+        auto: false,
+        goalsDone: 0,
+        imported: 0,
+        cur: null,
+        seen: {},
+        inc: [],
+        cats: [],
+        sec: null,
+      });
+      const gs = (g) => tot(D.con.filter((c) => c.g === g.id));
+      async function dKey(pw, salt) {
+        const k = await crypto.subtle.importKey(
+          "raw",
+          new TextEncoder().encode(pw),
+          "PBKDF2",
+          false,
+          ["deriveKey"],
+        );
+        return crypto.subtle.deriveKey(
+          {
+            name: "PBKDF2",
+            salt: unb(salt),
+            iterations: 200000,
+            hash: "SHA-256",
+          },
+          k,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["encrypt", "decrypt"],
+        );
+      }
+      async function seal(o) {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        return {
+          iv: b64(iv),
+          ct: b64(
+            new Uint8Array(
+              await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv },
+                KEY,
+                new TextEncoder().encode(JSON.stringify(o)),
+              ),
+            ),
+          ),
+        };
+      }
+      async function openS(o) {
+        return JSON.parse(
+          new TextDecoder().decode(
+            await crypto.subtle.decrypt(
+              { name: "AES-GCM", iv: unb(o.iv) },
+              KEY,
+              unb(o.ct),
+            ),
+          ),
+        );
+      }
+      const save = () =>
+        seal(D).then((s) => {
+          LS.set("nl_e_" + U.email, s);
+          sync();
+          dirWrite(false)
+            .then(dstat)
+            .catch(() => {});
+        });
+      async function start(email, pw, fresh, key) {
+        U = LS.get("nl_users", {})[email];
+        KEY = key || (await dKey(pw, U.ksalt || U.salt));
+        const e = LS.get("nl_e_" + email, null),
+          old = LS.get("nl_d_" + email, null);
+        let d = old;
+        if (e) {
+          try {
+            d = await openS(e);
+          } catch (x) {
+            throw new Error(
+              "Could not unlock your saved data with that password.",
+            );
+          }
+        }
+        D = Object.assign(blank(), d || {});
+        if (!D.cur) D.cur = U.cur;
+        if (D.goal) {
+          D.goals.push({
+            id: 1,
+            name: D.goal.name,
+            target: D.goal.target,
+            by: D.goal.by,
+          });
+          D.con.forEach((c) => (c.g = 1));
+          delete D.goal;
+        }
+        if (old) localStorage.removeItem("nl_d_" + email);
+        await secInit(email, key);
+        $("auth").hidden = true;
+        $("app").hidden = false;
+        $("who").textContent = U.first + " " + U.last;
+        $("un").textContent = U.first + " " + U.last;
+        $("av").textContent = (U.first[0] + U.last[0]).toUpperCase();
+        $("themeBtn").classList.add("in");
+        $("tbSlot").appendChild($("themeBtn"));
+        $("date").value = today();
+        $("idt").value = today();
+        $("rm").value = today().slice(0, 7);
+        fillCats();
+        $("cvF").innerHTML = $("cvT").innerHTML = CURS.map(
+          (c) => `<option>${c}</option>`,
+        ).join("");
+        $("cvF").value = U.cur;
+        $("cvT").value = U.cur === "USD" ? "NGN" : "USD";
+        recurring();
+        render();
+        bstat();
+        remst();
+        dirInit();
+        pfill();
+        convert();
+        save();
+        if (!e && !old && !fresh) {
+          go("settings");
+          toast("New device? Connect MEGA and restore your backup.");
+        } else go("overview");
+      }
+      /* ---------- Budget, streaks, recurring ---------- */
+      function range() {
+        const t = today(),
+          p = D.bud.p;
+        if (p === "day") return [t, t];
+        if (p === "week") {
+          const w = wkStart(t);
+          return [w, addDays(w, 6)];
+        }
+        return [t.slice(0, 8) + "01", t.slice(0, 7) + "-31"];
+      }
+      function lim(d) {
+        const a = D.bud.a,
+          p = D.bud.p;
+        return p === "day" ? a : p === "week" ? a / 7 : a / dim(d);
+      }
+      function bStreak() {
+        const a = D.bud.a;
+        if (!(a > 0)) return { n: 0, days: [] };
+        const sp = {};
+        D.exp.forEach((e) => (sp[e.date] = (sp[e.date] || 0) + e.amt));
+        const t = today(),
+          s = U.created,
+          days = [];
+        let n = 0;
+        for (let i = 13; i >= 0; i--) {
+          const d = addDays(t, -i);
+          days.push(d < s ? "p" : (sp[d] || 0) <= lim(d) ? "" : "m");
+        }
+        for (let i = 0; ; i++) {
+          const d = addDays(t, -i);
+          if (d < s || (sp[d] || 0) > lim(d)) break;
+          n++;
+        }
+        return { n, days };
+      }
+      function sStreak() {
+        const w = new Set(D.con.map((c) => wkStart(c.date)));
+        let k = wkStart(today()),
+          n = 0;
+        if (!w.has(k)) k = addDays(k, -7);
+        while (w.has(k)) {
+          n++;
+          k = addDays(k, -7);
+        }
+        return n;
+      }
+      function recurring() {
+        const t = today(),
+          cm = t.slice(0, 7),
+          nm = (m) =>
+            iso(new Date(+m.slice(0, 4), +m.slice(5, 7), 1)).slice(0, 7);
+        let ch = false;
+        D.rec.forEach((r) => {
+          let m = nm(r.last);
+          while (m <= cm) {
+            const d = dueDate(m, r.day);
+            if (d > t) break;
+            D.exp.push({
+              id: Date.now() + Math.random(),
+              amt: r.amt,
+              date: d,
+              desc: r.n,
+              cat: r.cat,
+              auto: 1,
+            });
+            r.last = m;
+            m = nm(m);
+            ch = true;
+          }
+        });
+        if (ch) {
+          save();
+          toast("Recurring bills logged");
+        }
+      }
+      /* ---------- Rendering ---------- */
+
+      function fillCats() {
+        const o = CATS()
+          .map((c) => `<option>${esc(c[0])}</option>`)
+          .join("");
+        ["cat", "rc", "ec", "fc"].forEach((i) => {
+          const v = $(i).value;
+          $(i).innerHTML =
+            (i === "fc" ? '<option value="">All categories</option>' : "") + o;
+          if (v) $(i).value = v;
+        });
+      }
+      const FP =
+        "M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z";
+      const flame = (c, z) =>
+        `<svg class="fl ${c}" viewBox="0 0 24 24" style="width:${z}px;height:${z}px" aria-hidden="true"><path d="${FP}"/></svg>`;
+      function tallyHTML(days) {
+        return days.map((c) => flame(c, 22)).join("");
+      }
+      const BADGES = [].concat(
+        [
+          [1, "First spark"],
+          [3, "Three-peat"],
+          [7, "Week warrior"],
+          [14, "Fortnight focus"],
+          [30, "Month master"],
+          [60, "Two-month titan"],
+          [100, "Century club"],
+          [180, "Half-year hero"],
+          [365, "Year of discipline"],
+        ].map(([t, n]) => [
+          "✦",
+          n,
+          t + (t === 1 ? " day" : " days") + " on budget",
+          () => D.bestB,
+          t,
+        ]),
+        [
+          [1, "Saver’s start"],
+          [2, "Two-week saver"],
+          [4, "Month of saving"],
+          [8, "Steady stacker"],
+          [12, "Quarter keeper"],
+          [26, "Half-year hoarder"],
+          [52, "Year of savings"],
+        ].map(([t, n]) => [
+          "◆",
+          n,
+          "Save " + t + (t === 1 ? " week" : " weeks") + " in a row",
+          () => D.bestS,
+          t,
+        ]),
+        [
+          [1, "Goal getter"],
+          [3, "Triple goal"],
+          [5, "Dream chaser"],
+          [10, "Goal machine"],
+        ].map(([t, n]) => [
+          "★",
+          n,
+          "Reach " + t + (t === 1 ? " savings goal" : " savings goals"),
+          () => D.goalsDone || 0,
+          t,
+        ]),
+        [
+          [1, "First entry"],
+          [25, "Getting going"],
+          [100, "Century log"],
+          [500, "Record keeper"],
+          [1000, "Data historian"],
+        ].map(([t, n]) => [
+          "✎",
+          n,
+          "Log " + t + (t === 1 ? " expense" : " expenses"),
+          () => D.exp.length,
+          t,
+        ]),
+        [
+          [1, "Statement starter"],
+          [100, "Bulk importer"],
+          [500, "Data wrangler"],
+        ].map(([t, n]) => [
+          "⇪",
+          n,
+          "Import " +
+            t +
+            (t === 1 ? " transaction" : " transactions") +
+            " from statements",
+          () => D.imported || 0,
+          t,
+        ]),
+        [
+          [1, "Automated"],
+          [5, "Bill boss"],
+        ].map(([t, n]) => [
+          "↻",
+          n,
+          "Set up " + t + (t === 1 ? " recurring bill" : " recurring bills"),
+          () => D.rec.length,
+          t,
+        ]),
+        [
+          [5, "Well-rounded"],
+          [10, "Category pro"],
+        ].map(([t, n]) => [
+          "▣",
+          n,
+          "Use " + t + " different categories",
+          () => new Set(D.exp.map((e) => e.cat)).size,
+          t,
+        ]),
+        [
+          ["◎", "Budget set", "Set a budget", () => (D.bud.a > 0 ? 1 : 0), 1],
+          [
+            "☁",
+            "Cloud keeper",
+            "Connect your MEGA backup",
+            () => (D.mega ? 1 : 0),
+            1,
+          ],
+          [
+            "☁",
+            "Always safe",
+            "Turn on auto backup",
+            () => (D.mega && D.auto ? 1 : 0),
+            1,
+          ],
+        ],
+      );
+      function row(e) {
+        return `<div class="item"><strong>${esc(e.desc)}</strong><span class="amt">${fmt(e.amt)}</span><button class="x" data-ed="${e.id}" aria-label="Edit expense">✎</button><button class="x" data-del="${e.id}" aria-label="Delete expense">×</button><small><span class="dot" style="background:${colorOf(e.cat)}"></span>${esc(e.cat)} · ${e.date}${e.auto ? " · automatic" : ""}</small></div>`;
+      }
+      let RNG = 7;
+      const dd = (s) => s.slice(8) + "." + s.slice(5, 7);
+      function trow(e) {
+        return `<div class="tr2"><span>${esc(e.desc)}</span><span class="hm"><span class="dot" style="background:${colorOf(e.cat)}"></span>${esc(e.cat)}</span><span class="hm">${e.date}</span><span class="amt">${fmt(e.amt)}</span></div>`;
+      }
+      function areaSVG(v) {
+        const W = 400,
+          H = 140,
+          n = v.length,
+          mx = Math.max(...v, 1),
+          x = (i) => (i * W) / (n - 1),
+          y = (a) => H - 6 - (a / mx) * (H - 26);
+        let p = `M0,${y(v[0])}`;
+        for (let i = 1; i < n; i++) {
+          const m = (x(i - 1) + x(i)) / 2;
+          p += ` C${m},${y(v[i - 1])} ${m},${y(v[i])} ${x(i)},${y(v[i])}`;
+        }
+        return `<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--acc);stop-opacity:.45"/><stop offset="1" style="stop-color:var(--acc);stop-opacity:0"/></linearGradient></defs><path class="af" d="${p} L${W},${H} L0,${H} Z"/><path class="al" d="${p}"/>`;
+      }
+      function series() {
+        if (RNG < 365) {
+          const per = {};
+          D.exp.forEach((e) => (per[e.date] = (per[e.date] || 0) + e.amt));
+          const days = [];
+          for (let i = RNG - 1; i >= 0; i--) days.push(addDays(today(), -i));
+          return { v: days.map((d) => per[d] || 0), l: days.map(dd) };
+        }
+        const mo = {};
+        D.exp.forEach(
+          (e) =>
+            (mo[e.date.slice(0, 7)] = (mo[e.date.slice(0, 7)] || 0) + e.amt),
+        );
+        const ms = [];
+        for (let i = 11; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(1);
+          d.setMonth(d.getMonth() - i);
+          ms.push(iso(d).slice(0, 7));
+        }
+        return {
+          v: ms.map((m) => mo[m] || 0),
+          l: ms.map((m) => m.slice(5) + "." + m.slice(2, 4)),
+        };
+      }
+      function render() {
+        const [a, b] = range(),
+          inR = D.exp.filter((e) => e.date >= a && e.date <= b),
+          sp = tot(inR),
+          B = D.bud.a,
+          PL = { day: "today", week: "this week", month: "this month" }[
+            D.bud.p
+          ],
+          p = B > 0 ? sp / B : 0,
+          pc = Math.min(100, p * 100);
+        $("alerts").innerHTML =
+          B > 0 && p >= 0.8
+            ? `<div class="alert ${p >= 1 ? "bad" : ""}" role="status">${p >= 1 ? "You are over budget by " + fmt(sp - B) + "." : "You have used " + Math.round(p * 100) + "% of your budget. " + fmt(B - sp) + " left."}</div>`
+            : "";
+        $("dn").setAttribute(
+          "class",
+          "dn" + (p >= 1 ? " bad" : p >= 0.8 ? " warn" : ""),
+        );
+        $("dnp").setAttribute("stroke-dasharray", pc + " " + (100 - pc));
+        $("dnt").textContent = B > 0 ? Math.round(p * 100) + "%" : "–";
+        $("dnl").textContent =
+          B > 0 ? "Budget " + fmt(B) + ", " + PL : "No budget set";
+        $("dns").textContent =
+          B > 0
+            ? sp <= B
+              ? fmt(B - sp) + " left " + PL
+              : fmt(sp - B) + " over budget"
+            : "Set one in Plan";
+        const S = series(),
+          v = S.v,
+          mx = Math.max(...v, 1),
+          tt = v.reduce((a, b) => a + b, 0),
+          n = v.length;
+        $("area").innerHTML = areaSVG(v);
+        $("apk").textContent = `${fmt(tt)} total · peak ${fmt(tt ? mx : 0)}`;
+        $("alab").innerHTML =
+          `<span>${S.l[0]}</span><span>${S.l[n >> 1]}</span><span>${S.l[n - 1]}</span>`;
+        const k = RNG > 30 ? 12 : 7,
+          v7 = v.slice(-k),
+          m7 = Math.max(...v7, 1),
+          l7 = S.l.slice(-k);
+        $("bth").textContent = RNG > 30 ? "Monthly spending" : "Daily spending";
+        $("btl").textContent = RNG > 30 ? "Last 12 months" : "Last 7 days";
+        $("bars").innerHTML = v7
+          .map(
+            (x, i) =>
+              `<div class="bc" title="${fmt(x)}"><div class="bt"><i style="height:${(x / m7) * 100}%"></i></div><span>${l7[i].slice(0, 2)}</span></div>`,
+          )
+          .join("");
+        document
+          .querySelectorAll(".pills button")
+          .forEach((x) => x.classList.toggle("on", +x.dataset.r === RNG));
+        const by = {};
+        inR.forEach((e) => (by[e.cat] = (by[e.cat] || 0) + e.amt));
+        const rows = Object.entries(by).sort((x, y) => y[1] - x[1]),
+          cm = rows.length ? rows[0][1] : 1;
+        $("cats").innerHTML = rows.length
+          ? rows
+              .map(
+                ([n, x]) =>
+                  `<div class="cb"><div><span><span class="dot" style="background:${colorOf(n)}"></span>${esc(n)}</span><span>${fmt(x)}</span></div><div class="bar"><i style="width:${(x / cm) * 100}%;background:${colorOf(n)}"></i></div></div>`,
+              )
+              .join("")
+          : '<div class="empty">Add an expense to see where your money goes.</div>';
+        $("gmini").innerHTML = D.goals.length
+          ? D.goals
+              .map((g) => {
+                const s = gs(g);
+                return `<div style="margin-bottom:8px"><strong>${esc(g.name)}</strong><div class="bar"><i style="width:${Math.min(100, (s / g.target) * 100)}%"></i></div><div class="lbl">${fmt(s)} of ${fmt(g.target)}</div></div>`;
+              })
+              .join("")
+          : '<div class="empty">No goals yet. Add one in Plan.</div>';
+        const rc = [...D.exp]
+          .sort((x, y) => y.date.localeCompare(x.date) || y.id - x.id)
+          .slice(0, 5);
+        $("recent").innerHTML = rc.length
+          ? rc.map(trow).join("")
+          : '<div class="empty" style="padding:14px 16px">No expenses yet. Import a statement or add your first one.</div>';
+        renderList();
+        renderPlan();
+        renderRec();
+        renderStreaks();
+        renderRep();
+        renderSec();
+        renderCats();
+        remind();
+      }
+      function renderList() {
+        const q = $("gs").value.toLowerCase(),
+          c = $("fc").value,
+          f = $("ff").value,
+          t = $("ft").value,
+          mn = parseFloat($("fmn").value),
+          mx = parseFloat($("fmx").value),
+          so = $("fso").value,
+          a = $("fau").value;
+        const l = D.exp
+          .filter(
+            (e) =>
+              (!q || e.desc.toLowerCase().includes(q)) &&
+              (!c || e.cat === c) &&
+              (!f || e.date >= f) &&
+              (!t || e.date <= t) &&
+              !(mn >= 0 && e.amt < mn) &&
+              !(mx >= 0 && e.amt > mx) &&
+              (!a || (a === "auto") === !!e.auto),
+          )
+          .sort(
+            so === "old"
+              ? (x, y) => x.date.localeCompare(y.date) || x.id - y.id
+              : so === "hi"
+                ? (x, y) => y.amt - x.amt
+                : so === "lo"
+                  ? (x, y) => x.amt - y.amt
+                  : (x, y) => y.date.localeCompare(x.date) || y.id - x.id,
+          );
+        $("fsum").textContent =
+          l.length + " of " + D.exp.length + " expenses · " + fmt(tot(l));
+        $("list").innerHTML = l.length
+          ? l.map(row).join("")
+          : '<div class="empty">No matching expenses.</div>';
+      }
+      function renderPlan() {
+        if (document.activeElement.id !== "ba") {
+          $("bp").value = D.bud.p;
+          $("ba").value = D.bud.a || "";
+        }
+        $("gbox").innerHTML = D.goals
+          .map((g) => {
+            const s = gs(g);
+            return `<div style="border-top:1px solid var(--line);padding:12px 0"><div class="row" style="justify-content:space-between"><strong>${esc(g.name)}</strong><button class="x" data-gdel="${g.id}" aria-label="Delete ${esc(g.name)}">×</button></div><div class="bar"><i style="width:${Math.min(100, (s / g.target) * 100)}%"></i></div><div class="lbl">${fmt(s)} of ${fmt(g.target)}${g.by ? " · by " + g.by : ""}</div><form class="row fcon" data-g="${g.id}" style="margin-top:8px"><input type="number" min="0.01" step="any" placeholder="Amount saved" aria-label="Amount to add to ${esc(g.name)}" style="flex:1" required><button type="submit">Add</button></form></div>`;
+          })
+          .join("");
+      }
+      function renderRec() {
+        $("rlist").innerHTML = D.rec.length
+          ? D.rec
+              .map(
+                (r) =>
+                  `<div class="item"><strong>${esc(r.n)}</strong><span class="amt">${fmt(r.amt)}</span><button class="x" data-rdel="${r.id}" aria-label="Remove ${esc(r.n)}">×</button><small><span class="dot" style="background:${colorOf(r.cat)}"></span>${esc(r.cat)} · day ${r.day} of every month${r.day > 28 ? " (or the last day of shorter months)" : ""}</small></div>`,
+              )
+              .join("")
+          : '<div class="empty">No recurring bills yet.</div>';
+      }
+      function renderStreaks() {
+        const b = bStreak(),
+          s = sStreak(),
+          ob = D.bestB + "," + D.bestS;
+        D.bestB = Math.max(D.bestB, b.n);
+        D.bestS = Math.max(D.bestS, s);
+        if (ob !== D.bestB + "," + D.bestS) save();
+        const html = tallyHTML(b.days);
+        $("tally1").innerHTML = html;
+        $("tally2").innerHTML = html;
+        $("tally3").innerHTML = html;
+        $("ssum").textContent =
+          D.bud.a > 0
+            ? `${b.n}-day budget streak · ${s}-week saving streak`
+            : "Set a budget to start a streak.";
+        $("bn").innerHTML =
+          flame(b.n ? "" : "m", 44) +
+          `<span>${b.n} ${b.n === 1 ? "day" : "days"}</span>`;
+        $("sn").innerHTML =
+          flame(s ? "" : "m", 44) +
+          `<span>${s} ${s === 1 ? "week" : "weeks"}</span>`;
+        $("bnote").textContent =
+          D.bud.a > 0
+            ? `Best: ${D.bestB}. Each day you spend within your daily share adds a flame.`
+            : "Set a budget in Plan to start.";
+        $("snote").textContent =
+          `Best: ${D.bestS}. Add to a savings goal at least once a week.`;
+        let n = 0;
+        $("badges").innerHTML = BADGES.map(([ic, nm, ds, fn, t]) => {
+          const v = fn(),
+            on = v >= t;
+          if (on) n++;
+          return `<div class="badge${on ? " on" : ""}"><span class="bi">${ic}</span><b>${nm}</b><small>${ds}</small>${on ? "<em>Earned</em>" : `<div class="bar"><i style="width:${Math.min(100, (v / t) * 100)}%"></i></div><small>${Math.min(v, t)} of ${t}</small>`}</div>`;
+        }).join("");
+        $("bh").textContent = `Badges (${n} of ${BADGES.length})`;
+      }
+      /* ---------- Navigation ---------- */
+      const T = {
+        overview: "Overview",
+        expenses: "Expenses",
+        import: "Import statement",
+        plan: "Plan",
+        recurring: "Recurring",
+        streaks: "Streaks",
+        convert: "Currency converter",
+        reports: "Reports",
+        security: "Security",
+        settings: "Settings",
+      };
+      function nav(o) {
+        const b = document.body,
+          x = o === undefined ? !b.classList.contains("nav-open") : o;
+        b.classList.toggle("nav-open", x);
+        $("menu").setAttribute("aria-expanded", x);
+      }
+      function go(v) {
+        nav(false);
+        if (v !== "security") NEWRC = null;
+        Object.keys(T).forEach((x) => {
+          $("v-" + x).hidden = x !== v;
+          {
+            const nb = document.querySelector(`.side [data-v="${x}"]`);
+            if (nb) nb.classList.toggle("on", x === v);
+          }
+        });
+        $("title").textContent = T[v];
+        scrollTo(0, 0);
+      }
+      function net() {
+        const on = navigator.onLine;
+        $("net").className = "net" + (on ? "" : " off");
+        $("net").lastElementChild.textContent = on ? "Online" : "Offline";
+      }
+      addEventListener("online", net);
+      addEventListener("offline", net);
+      net();
+
+      /* ---------- Events ---------- */
+      document.onclick = (e) => {
+        const t = e.target.closest("button");
+        if (!t) return;
+        if (t.dataset.v) go(t.dataset.v);
+        if (t.dataset.gdel && confirm("Delete this goal?")) {
+          D.goals = D.goals.filter((x) => String(x.id) !== t.dataset.gdel);
+          D.con = D.con.filter((c) => String(c.g) !== t.dataset.gdel);
+          save();
+          render();
+        }
+        if (t.dataset.r) {
+          RNG = +t.dataset.r;
+          render();
+        }
+        if (t.dataset.ed) openEd(t.dataset.ed);
+        if (t.id === "doImp") doImport();
+        if (t.dataset.sg !== undefined) addSg(+t.dataset.sg);
+        if (t.dataset.del && confirm("Delete this expense?")) {
+          D.exp = D.exp.filter((x) => String(x.id) !== t.dataset.del);
+          save();
+          render();
+        }
+        if (
+          t.dataset.rdel &&
+          confirm("Remove this recurring bill? Past entries stay.")
+        ) {
+          D.rec = D.rec.filter((x) => String(x.id) !== t.dataset.rdel);
+          save();
+          render();
+        }
+      };
+      $("gs").oninput = () => {
+        if ($("v-expenses").hidden) go("expenses");
+        renderList();
+      };
+      $("desc").oninput = (e) => {
+        if (!touched) {
+          const g = guess(e.target.value);
+          if (g) $("cat").value = g;
+        }
+      };
+      $("cat").onchange = () => (touched = true);
+      $("fexp").onsubmit = (e) => {
+        e.preventDefault();
+        const amt = parseFloat($("amt").value);
+        if (!(amt > 0)) return toast("Enter an amount greater than zero.");
+        D.exp.push({
+          id: Date.now(),
+          amt,
+          date: $("date").value,
+          desc: $("desc").value.trim(),
+          cat: $("cat").value,
+        });
+        $("amt").value = "";
+        $("desc").value = "";
+        touched = false;
+        save();
+        render();
+        toast("Expense saved");
+      };
+      $("fbud").onsubmit = (e) => {
+        e.preventDefault();
+        D.bud = {
+          p: $("bp").value,
+          a: Math.max(0, parseFloat($("ba").value) || 0),
+        };
+        save();
+        render();
+        toast("Budget saved");
+      };
+      $("fgoal").onsubmit = (e) => {
+        e.preventDefault();
+        D.goals.push({
+          id: Date.now(),
+          name: $("gn").value.trim(),
+          target: parseFloat($("gt").value),
+          by: $("gd").value,
+        });
+        e.target.reset();
+        save();
+        render();
+        toast("Goal added");
+      };
+      document.addEventListener("submit", (e) => {
+        const f = e.target;
+        if (f.classList.contains("fcon")) {
+          e.preventDefault();
+          const amt = parseFloat(f.querySelector("input").value);
+          if (!(amt > 0)) return;
+          D.con.push({ id: Date.now(), date: today(), amt, g: +f.dataset.g });
+          const g = D.goals.find((x) => x.id === +f.dataset.g);
+          if (g && gs(g) >= g.target) {
+            D.goals = D.goals.filter((x) => x !== g);
+            D.goalsDone = (D.goalsDone || 0) + 1;
+            save();
+            render();
+            celebrate(g);
+          } else {
+            save();
+            render();
+            toast("Added to savings");
+          }
+        }
+      });
+      $("frec").onsubmit = (e) => {
+        e.preventDefault();
+        const t = today(),
+          d = Math.min(31, Math.max(1, parseInt($("rd").value) || 1)),
+          pm = iso(new Date(+t.slice(0, 4), +t.slice(5, 7) - 2, 1)).slice(0, 7);
+        D.rec.push({
+          id: Date.now(),
+          n: $("rn").value.trim(),
+          amt: parseFloat($("ra").value),
+          day: d,
+          cat: $("rc").value,
+          last: pm,
+        });
+        $("rn").value = "";
+        $("ra").value = "";
+        recurring();
+        save();
+        render();
+        toast("Recurring bill added");
+      };
+
+      /* ---------- Bank statement import ---------- */
+      const MON = "jan feb mar apr may jun jul aug sep oct nov dec".split(" ");
+      function toDate(s) {
+        s = String(s || "").trim();
+        let m;
+        if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})/))) return m[0];
+        const f = (d, mo, y) => {
+          y = y.length == 2 ? "20" + y : y;
+          return +mo >= 1 && +mo <= 12 && +d >= 1 && +d <= 31
+            ? `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+            : null;
+        };
+        if ((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/)))
+          return f(m[1], m[2], m[3]);
+        if (
+          (m = s.match(/^(\d{1,2})[ \-]([A-Za-z]{3})[a-z]*[ \-,]+(\d{2,4})/))
+        ) {
+          const i = MON.indexOf(m[2].toLowerCase());
+          if (i >= 0) return f(m[1], i + 1, m[3]);
+        }
+        return null;
+      }
+      function num(s) {
+        if (s == null) return NaN;
+        const t = String(s).trim();
+        if (!/\d/.test(t)) return NaN;
+        const v = parseFloat(t.replace(/[^0-9.]/g, ""));
+        if (isNaN(v)) return NaN;
+        return /^\(.*\)$/.test(t) || /-/.test(t) || /\bDR\b/i.test(t) ? -v : v;
+      }
+      function splitLine(l, d) {
+        const o = [];
+        let c = "",
+          q = false;
+        for (const ch of l) {
+          if (ch == '"') q = !q;
+          else if (ch == d && !q) {
+            o.push(c);
+            c = "";
+          } else c += ch;
+        }
+        o.push(c);
+        return o.map((s) => s.trim());
+      }
+      function analyse(text) {
+        const lines = text.split(/\r?\n/).filter((l) => l.trim());
+        if (lines.length < 2) throw new Error("That statement looks empty.");
+        const sample = lines.slice(0, 12).join("\n"),
+          dl = [",", ";", "\t"]
+            .map((c) => [c, sample.split(c).length])
+            .sort((a, b) => b[1] - a[1])[0][0];
+        const rows = lines.map((l) => splitLine(l, dl));
+        const hi = rows
+          .slice(0, 25)
+          .findIndex(
+            (r) =>
+              r.length >= 3 &&
+              r.some((c) => /date/i.test(c)) &&
+              r.some((c) =>
+                /desc|narr|detail|particular|remark|transaction|debit|credit|amount|withdraw/i.test(
+                  c,
+                ),
+              ),
+          );
+        let di = -1,
+          ni = -1,
+          dbi = -1,
+          cri = -1,
+          ai = -1;
+        if (hi >= 0) {
+          const h = rows[hi].map((x) => x.toLowerCase()),
+            f = (re) => h.findIndex((x) => re.test(x));
+          di = f(/date/);
+          ni = f(/desc|narr|detail|particular|remark|transaction(?! date)/);
+          dbi = f(/debit|withdraw|money out|paid out/);
+          cri = f(/credit|deposit|money in|paid in/);
+          ai = f(/amount/);
+        } else {
+          const r = rows[0];
+          di = r.findIndex((c) => toDate(c));
+          ai = r.map((c) => (isNaN(num(c)) ? 0 : 1)).lastIndexOf(1);
+          ni = r.reduce(
+            (b, c, i) =>
+              i !== di && i !== ai && c.length > (r[b] || "").length ? i : b,
+            0,
+          );
+        }
+        if (di < 0)
+          throw new Error("Could not find a date column in that statement.");
+        const split = dbi >= 0 || cri >= 0;
+        if (!split && ai < 0)
+          throw new Error("Could not find an amount column in that statement.");
+        if (ni < 0 || ni === di) ni = di === 0 ? 1 : 0;
+        const body = rows.slice(hi + 1),
+          vals = split ? null : body.map((r) => num(r[ai])),
+          hasNeg = !!vals && vals.some((v) => v < 0),
+          out = [],
+          inn = [],
+          sg = [];
+        body.forEach((r, i) => {
+          const date = toDate(r[di]);
+          if (!date) return;
+          const desc = (r[ni] || "Bank transaction").slice(0, 80);
+          let o = 0,
+            n = 0;
+          if (split) {
+            const a = Math.abs(num(r[dbi])),
+              b = Math.abs(num(r[cri]));
+            if (a > 0) o = a;
+            else if (b > 0) n = b;
+          } else {
+            const v = vals[i];
+            if (v < 0) o = -v;
+            else if (v > 0) {
+              if (hasNeg) n = v;
+              else o = v;
+            }
+          }
+          if (o > 0)
+            out.push({
+              date,
+              desc,
+              amt: o,
+              cat: guess(desc) || "Other",
+              on: true,
+            });
+          else if (n > 0) inn.push({ date, desc, amt: n });
+        });
+        out.forEach((t) => {
+          t.dup = D.exp.some(
+            (e) =>
+              e.date === t.date &&
+              Math.abs(e.amt - t.amt) < 0.01 &&
+              e.desc.toLowerCase() === t.desc.toLowerCase(),
+          );
+          if (t.dup) t.on = false;
+        });
+        const g = {};
+        out.forEach((t) => {
+          const k = t.desc
+            .toLowerCase()
+            .replace(/[^a-z ]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (k) (g[k] = g[k] || []).push(t);
+        });
+        Object.values(g).forEach((a) => {
+          if (new Set(a.map((t) => t.date.slice(0, 7))).size < 2) return;
+          const avg = a.reduce((s, t) => s + t.amt, 0) / a.length;
+          if (!a.every((t) => Math.abs(t.amt - avg) <= avg * 0.1)) return;
+          if (D.rec.some((r) => r.n.toLowerCase() === a[0].desc.toLowerCase()))
+            return;
+          const last = a.reduce((m, t) => (t.date > m ? t.date : m), "");
+          sg.push({
+            n: a[0].desc,
+            amt: Math.round(avg),
+            day: Math.min(31, +a[0].date.slice(8)),
+            cat: a[0].cat,
+            last: last.slice(0, 7),
+          });
+        });
+        return { out, inn, sg: sg.slice(0, 6) };
+      }
+      let IM = null;
+      function renderImport() {
+        const box = $("ires");
+        if (!IM) {
+          box.innerHTML = "";
+          return;
+        }
+        const sel = IM.out.filter((t) => t.on),
+          dups = IM.out.filter((t) => t.dup).length;
+        const by = {};
+        IM.out.forEach((t) => (by[t.cat] = (by[t.cat] || 0) + t.amt));
+        const rows = Object.entries(by)
+            .sort((x, y) => y[1] - x[1])
+            .slice(0, 5),
+          mx = rows.length ? rows[0][1] : 1;
+        const opts = (c) =>
+          CATS()
+            .map(
+              (d) => `<option${d[0] === c ? " selected" : ""}>${d[0]}</option>`,
+            )
+            .join("");
+        box.innerHTML = `<div class="g4">
+  <div class="card st"><div class="lbl">Money out</div><b>${fmt(tot(IM.out))}</b></div>
+  <div class="card st"><div class="lbl">Money in</div><b>${fmt(tot(IM.inn))}</b></div>
+  <div class="card st"><div class="lbl">Spending transactions</div><b>${IM.out.length}</b></div>
+  <div class="card st"><div class="lbl">Already in Expensiz</div><b>${dups}</b></div></div>
+ <div class="g2x"><div class="card"><h2>Top categories</h2>${rows.map(([n, x]) => `<div class="cb"><div><span><span class="dot" style="background:${colorOf(n)}"></span>${esc(n)}</span><span>${fmt(x)}</span></div><div class="bar"><i style="width:${(x / mx) * 100}%;background:${colorOf(n)}"></i></div></div>`).join("") || '<div class="empty">No spending found.</div>'}</div>
+ <div class="card"><h2>Monthly bills spotted</h2>${IM.sg.map((s, i) => `<div class="chip"><span>${esc(s.n)}<br><small class="lbl">${fmt(s.amt)} around day ${s.day}</small></span><button class="ghost" data-sg="${i}">Make recurring</button></div>`).join("") || '<div class="empty">No repeating bills found.</div>'}</div></div>
+ <div class="card trans"><h2>Transactions to import</h2><div class="irs">${IM.out.map((t, i) => `<div class="ir"><input type="checkbox" data-i="${i}" ${t.on ? "checked" : ""} aria-label="Import ${esc(t.desc)}"><span>${esc(t.desc)}<small>${t.date}${t.dup ? " · already in Expensiz" : ""}</small></span><select data-i="${i}" aria-label="Category">${opts(t.cat)}</select><span class="amt">${fmt(t.amt)}</span></div>`).join("")}</div>
+ <div style="margin-top:12px"><button id="doImp">Import ${sel.length} transactions</button></div></div>`;
+      }
+      function runAnalyse() {
+        $("ierr").textContent = "";
+        try {
+          IM = analyse($("stext").value);
+          if (!IM.out.length && !IM.inn.length)
+            throw new Error("No transactions found in that statement.");
+        } catch (x) {
+          IM = null;
+          $("ierr").textContent = x.message;
+        }
+        renderImport();
+      }
+      function doImport() {
+        const s = IM.out.filter((t) => t.on);
+        if (!s.length) return toast("Select at least one transaction.");
+        let id = Date.now();
+        D.imported = (D.imported || 0) + s.length;
+        s.forEach((t) =>
+          D.exp.push({
+            id: id++,
+            amt: t.amt,
+            date: t.date,
+            desc: t.desc,
+            cat: t.cat,
+          }),
+        );
+        IM = null;
+        $("stext").value = "";
+        save();
+        render();
+        renderImport();
+        toast(s.length + " transactions imported");
+        go("overview");
+      }
+      $("sgo").onclick = runAnalyse;
+      const LIB = {
+        xlsx: "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
+        pdf: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+        pdfw: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+      };
+      const loadJS = (src) =>
+        new Promise((res, rej) => {
+          const s = document.createElement("script");
+          s.src = src;
+          s.onload = res;
+          s.onerror = () =>
+            rej(
+              new Error(
+                "Could not load the file reader. Connect to the internet and try again.",
+              ),
+            );
+          document.head.appendChild(s);
+        });
+      async function excelText(f) {
+        if (!window.XLSX) await loadJS(LIB.xlsx);
+        const wb = XLSX.read(await f.arrayBuffer(), {
+          type: "array",
+          cellDates: true,
+        });
+        return (
+          wb.SheetNames.map((n) =>
+            XLSX.utils.sheet_to_csv(wb.Sheets[n], {
+              blankrows: false,
+              dateNF: "yyyy-mm-dd",
+            }),
+          ).sort((a, b) => b.length - a.length)[0] || ""
+        );
+      }
+      async function pdfText(f) {
+        if (!window.pdfjsLib) {
+          await loadJS(LIB.pdf);
+          const w = await (await fetch(LIB.pdfw)).text();
+          pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
+            new Blob([w], { type: "text/javascript" }),
+          );
+        }
+        const pdf = await pdfjsLib.getDocument({
+            data: new Uint8Array(await f.arrayBuffer()),
+          }).promise,
+          out = [];
+        for (let n = 1; n <= pdf.numPages; n++) {
+          const items = (
+              await (await pdf.getPage(n)).getTextContent()
+            ).items.filter((i) => i.str.trim()),
+            lines = [];
+          items.forEach((i) => {
+            const y = i.transform[5],
+              l = lines.find((l) => Math.abs(l.y - y) < 3);
+            l ? l.it.push(i) : lines.push({ y, it: [i] });
+          });
+          lines
+            .sort((a, b) => b.y - a.y)
+            .forEach((l) => {
+              l.it.sort((a, b) => a.transform[4] - b.transform[4]);
+              let s = "",
+                end = null;
+              l.it.forEach((i) => {
+                const x = i.transform[4];
+                s +=
+                  (end == null ? "" : x - end > 6 ? "\t" : " ") + i.str.trim();
+                end = x + i.width;
+              });
+              out.push(s);
+            });
+        }
+        const t = out.join("\n");
+        if (t.trim().length < 20)
+          throw new Error(
+            "This PDF has no readable text. It may be a scan. Download the CSV or Excel version from your bank instead.",
+          );
+        return t;
+      }
+      async function readStatement(f) {
+        $("ierr").textContent = "";
+        const ext = (f.name.split(".").pop() || "").toLowerCase();
+        try {
+          let t;
+          if (["xls", "xlsx", "xlsm", "xltx"].includes(ext))
+            t = await excelText(f);
+          else if (ext === "pdf") t = await pdfText(f);
+          else if (["csv", "tsv", "txt"].includes(ext)) t = await f.text();
+          else
+            throw new Error(
+              "Unsupported file. Use .csv, .xls, .xlsx, .xlsm, .xltx or .pdf.",
+            );
+          $("stext").value = t;
+          runAnalyse();
+        } catch (x) {
+          IM = null;
+          renderImport();
+          $("ierr").textContent = x.message || "Could not read that file.";
+        }
+      }
+      $("sfile").onchange = (e) => {
+        const f = e.target.files[0];
+        e.target.value = "";
+        if (f) readStatement(f);
+      };
+      $("dz").ondragover = (e) => e.preventDefault();
+      $("dz").ondrop = (e) => {
+        e.preventDefault();
+        const f = e.dataTransfer.files[0];
+        if (f) readStatement(f);
+      };
+      $("ires").onchange = (e) => {
+        const i = e.target.dataset.i;
+        if (i == null || !IM) return;
+        const t = IM.out[i];
+        if (e.target.type === "checkbox") t.on = e.target.checked;
+        else t.cat = e.target.value;
+        $("doImp").textContent =
+          "Import " + IM.out.filter((x) => x.on).length + " transactions";
+      };
+      function addSg(i) {
+        const s = IM.sg[i];
+        D.rec.push({
+          id: Date.now(),
+          n: s.n,
+          amt: s.amt,
+          day: s.day,
+          cat: s.cat,
+          last: s.last,
+        });
+        IM.sg.splice(i, 1);
+        save();
+        recurring();
+        render();
+        renderImport();
+        toast("Recurring bill added");
+      }
+
+      /* ---------- Bill reminders ---------- */
+      function dueSoon() {
+        const t = today(),
+          o = [];
+        D.rec.forEach((r) => {
+          let d = dueDate(t.slice(0, 7), r.day);
+          if (d < t)
+            d = dueDate(
+              iso(new Date(+t.slice(0, 4), +t.slice(5, 7), 1)).slice(0, 7),
+              r.day,
+            );
+          const k = Math.round((new Date(d) - new Date(t)) / 864e5);
+          if (k <= 3) o.push({ r, d, k });
+        });
+        return o;
+      }
+      function remind() {
+        const l = dueSoon(),
+          w = (x) =>
+            x.k === 0
+              ? "today"
+              : x.k === 1
+                ? "tomorrow"
+                : "in " + x.k + " days";
+        $("due").innerHTML = l
+          .map(
+            (x) =>
+              `<div class="alert" role="status">${esc(x.r.n)} (${fmt(x.r.amt)}) is due ${w(x)}.</div>`,
+          )
+          .join("");
+        if ("Notification" in window && Notification.permission === "granted") {
+          let c = false;
+          l.forEach((x) => {
+            const k = x.r.id + x.d;
+            if (!D.seen[k]) {
+              D.seen[k] = 1;
+              c = true;
+              new Notification("Bill due " + w(x), {
+                body: x.r.n + " · " + fmt(x.r.amt),
+              });
+            }
+          });
+          if (c) save();
+        }
+      }
+      function remst() {
+        $("remst").textContent =
+          "Notification" in window
+            ? "Notifications: " +
+              {
+                granted: "on",
+                denied: "blocked in your browser settings",
+                default: "off",
+              }[Notification.permission]
+            : "Notifications are not supported in this browser.";
+      }
+      $("rem").onclick = async () => {
+        if (!("Notification" in window))
+          return toast("Notifications are not supported here.");
+        await Notification.requestPermission();
+        remst();
+        remind();
+      };
+
+      /* ---------- Currency converter (live rates when online, last rates when offline) ---------- */
+      async function rates(b) {
+        const k = "nl_fx_" + b;
+        if (navigator.onLine) {
+          try {
+            const r = await (
+              await fetch("https://open.er-api.com/v6/latest/" + b)
+            ).json();
+            if (r.result === "success") {
+              const o = { t: Date.now(), r: r.rates };
+              LS.set(k, o);
+              return o;
+            }
+          } catch (e) {}
+        }
+        return LS.get(k, null);
+      }
+      async function convert() {
+        const f = $("cvF").value,
+          t = $("cvT").value,
+          a = parseFloat($("cvA").value) || 0,
+          o = await rates(f);
+        if (!o || !o.r[t]) {
+          $("cvR").textContent = "";
+          $("cvN").textContent =
+            "Connect to the internet to get exchange rates.";
+          return;
+        }
+        $("cvR").textContent = new Intl.NumberFormat("en", {
+          style: "currency",
+          currency: t,
+          maximumFractionDigits: 2,
+        }).format(a * o.r[t]);
+        $("cvN").textContent =
+          `1 ${f} = ${o.r[t].toFixed(4)} ${t} · rates as of ${new Date(o.t).toLocaleString()}.`;
+      }
+      ["cvA", "cvF", "cvT"].forEach((i) => ($(i).oninput = convert));
+
+      /* ---------- MEGA backup (encrypted) ---------- */
+      const bname = () =>
+        "expensiz-backup-" + U.email.replace(/[^a-z0-9]/g, "_") + ".json";
+      async function ustore() {
+        if (ust) return ust;
+        if (!D.mega) throw new Error("Connect your MEGA account first.");
+        await loadMega();
+        try {
+          ust = await new mega.Storage({ email: U.email, password: D.mega.p })
+            .ready;
+        } catch (e) {
+          throw new Error(
+            "Could not open your MEGA account. Check the email and password.",
+          );
+        }
+        return ust;
+      }
+      const bfile = (s) =>
+        s.root.children.find((c) => c.name === bname() && !c.directory);
+      async function backup() {
+        const s = await ustore(),
+          f = bfile(s),
+          body = JSON.stringify(await seal(D));
+        if (f) await f.delete(true);
+        await s.upload(bname(), body).complete;
+        LS.set("nl_lb_" + U.email, Date.now());
+      }
+      function sync() {
+        if (!D || !D.mega || !D.auto) return;
+        clearTimeout(btm);
+        btm = setTimeout(async () => {
+          if (!navigator.onLine) {
+            pend = true;
+            return bstat();
+          }
+          try {
+            await backup();
+            pend = false;
+          } catch (e) {
+            pend = true;
+          }
+          bstat();
+        }, 3000);
+      }
+      async function restore() {
+        const s = await ustore(),
+          f = bfile(s);
+        if (!f) throw new Error("No backup found in that MEGA account.");
+        await applyBackup(
+          JSON.parse(new TextDecoder().decode(await f.downloadBuffer())),
+        );
+      }
+      async function applyBackup(o) {
+        let d;
+        try {
+          d = await openS(o);
+        } catch (e) {
+          throw new Error(
+            "That backup could not be decrypted with your Expensiz password.",
+          );
+        }
+        const m = D.mega,
+          ps = D.sec;
+        D = Object.assign(blank(), d);
+        D.sec = mergeSec(ps, D.sec);
+        if (d.cur && d.cur !== U.cur)
+          toast(
+            "This backup uses " +
+              d.cur +
+              " amounts but your account currency is " +
+              U.cur +
+              ". Change the currency in Settings to match.",
+          );
+        if (!D.cur) D.cur = U.cur;
+        D.mega = D.mega || m;
+        await save();
+        logS("Backup restored");
+        render();
+        bstat();
+        chkRev();
+      }
+      function bstat() {
+        const lb = LS.get("nl_lb_" + U.email, 0);
+        mview();
+        $("mautoW").hidden = !D.mega;
+        $("mauto").checked = !!D.auto;
+        $("bst").textContent = D.mega
+          ? `Connected to ${U.email}. Auto backup is ${D.auto ? "on" : "off"}. Last backup: ${lb ? new Date(lb).toLocaleString() : "not yet"}${pend ? ". Waiting for internet to back up." : "."}`
+          : "Not connected. Use the same email you signed up to Expensiz with.";
+      }
+      function mset() {
+        const p = $("mp").value;
+        if (p) {
+          D.mega = { p };
+          ust = null;
+        } else if (!D.mega) throw new Error("Enter your MEGA password.");
+      }
+      const fmtB = (n) =>
+        n >= 1e12
+          ? (n / 1e12).toFixed(2) + " TB"
+          : n >= 1e9
+            ? (n / 1e9).toFixed(2) + " GB"
+            : n >= 1e6
+              ? (n / 1e6).toFixed(1) + " MB"
+              : Math.round(n / 1e3) + " KB";
+      let mqAt = 0;
+      function mview() {
+        const c = !!D.mega;
+        [
+          $("me").parentElement,
+          $("mp").parentElement,
+          $("fmega").querySelector("button[type=submit]"),
+        ].forEach((x) => (x.hidden = c));
+        $("mnow").hidden = !c;
+        $("mdis").hidden = !c;
+        $("mrest").hidden = !c;
+        $("mq").hidden = !c;
+        if (!c) return;
+        const q = LS.get("nl_mq_" + U.email, null);
+        if (q) {
+          const u = q.u,
+            t = q.t,
+            p = t ? Math.min(100, (u / t) * 100) : 0;
+          $("mqb").style.width = p + "%";
+          $("mqb").style.background =
+            p >= 90 ? "var(--bad)" : p >= 75 ? "var(--gold)" : "";
+          $("mqt").textContent = p.toFixed(1) + "% used";
+          $("mqu").textContent = fmtB(u) + " used";
+          $("mqf").textContent =
+            fmtB(Math.max(0, t - u)) + " free of " + fmtB(t);
+        } else {
+          $("mqt").textContent = "";
+          $("mqu").textContent = "Checking storage…";
+          $("mqf").textContent = "";
+        }
+        if (navigator.onLine && Date.now() - mqAt > 6e4) {
+          mqAt = Date.now();
+          ustore()
+            .then((st) => st.getAccountInfo())
+            .then((i) => {
+              LS.set("nl_mq_" + U.email, { u: i.spaceUsed, t: i.spaceTotal });
+              mview();
+            })
+            .catch(() => {
+              if (!q)
+                $("mqu").textContent =
+                  "Could not read storage. Check your connection.";
+            });
+        }
+      }
+      $("mnow").onclick = async () => {
+        try {
+          toast("Backing up…");
+          await backup();
+          mqAt = 0;
+          bstat();
+          toast("Backed up to MEGA");
+        } catch (x) {
+          toast(x.message);
+        }
+      };
+      $("mauto").onchange = (e) => {
+        D.auto = e.target.checked;
+        save();
+        if (D.auto) sync();
+        bstat();
+      };
+      $("fmega").onsubmit = async (e) => {
+        e.preventDefault();
+        mset();
+        try {
+          await save();
+          await backup();
+          $("mp").value = "";
+          mqAt = 0;
+          bstat();
+          toast("Backed up to MEGA");
+        } catch (x) {
+          toast(x.message);
+        }
+      };
+      $("mrest").onclick = async () => {
+        mset();
+        if (!confirm("Replace the data on this device with your MEGA backup?"))
+          return;
+        try {
+          await restore();
+          toast("Backup restored");
+        } catch (x) {
+          toast(x.message);
+        }
+      };
+      $("mdis").onclick = () => {
+        D.mega = null;
+        D.auto = false;
+        ust = null;
+        LS.set("nl_mq_" + U.email, null);
+        save();
+        bstat();
+      };
+      addEventListener("online", () => {
+        if (D) {
+          sync();
+          convert();
+        }
+      });
+      setInterval(
+        () => {
+          if (D) remind();
+        },
+        15 * 60 * 1000,
+      );
+
+      /* ---------- Profile ---------- */
+      const paint = () => {
+        $("who").textContent = U.first + " " + U.last;
+        $("un").textContent = U.first + " " + U.last;
+        $("av").textContent = (U.first[0] + U.last[0]).toUpperCase();
+      };
+      function pfill() {
+        $("pf").value = U.first;
+        $("pl").value = U.last;
+        $("pc").innerHTML = CURS.map((c) => `<option>${c}</option>`).join("");
+        $("pc").value = U.cur;
+        $("me").value = U.email;
+      }
+      $("fpro").onsubmit = async (e) => {
+        e.preventDefault();
+        const u = LS.get("nl_users", {}),
+          a = u[U.email],
+          first = $("pf").value.trim(),
+          last = $("pl").value.trim(),
+          cur = $("pc").value,
+          old = a.cur,
+          btn = e.target.querySelector("button[type=submit]");
+        if (!first || !last) return;
+        if ((cur !== old || CFG.API_URL) && !navigator.onLine)
+          return toast(
+            cur !== old
+              ? "Changing the currency needs an internet connection."
+              : "Connect to the internet to update your profile.",
+          );
+        btn.disabled = true;
+        try {
+          let k = 1;
+          if (cur !== old) {
+            const j = await (
+              await fetch("https://open.er-api.com/v6/latest/" + old)
+            ).json();
+            if (j.result !== "success" || !j.rates[cur])
+              throw new Error("Could not get the exchange rate. Try again.");
+            k = j.rates[cur];
+          }
+          if (CFG.API_URL)
+            await api("/profile", {
+              email: U.email,
+              proof: a.hash,
+              first,
+              last,
+              cur,
+            });
+          Object.assign(a, { first, last, cur });
+          u[U.email] = a;
+          LS.set("nl_users", u);
+          U = a;
+          if (k !== 1) {
+            const c = (x) => Math.round(x * k * 100) / 100;
+            D.exp.forEach((x) => (x.amt = c(x.amt)));
+            D.con.forEach((x) => (x.amt = c(x.amt)));
+            D.goals.forEach((x) => (x.target = c(x.target)));
+            D.rec.forEach((x) => (x.amt = c(x.amt)));
+            D.inc.forEach((x) => (x.amt = c(x.amt)));
+            D.bud.a = c(D.bud.a);
+            D.cur = cur;
+            IM = null;
+            renderImport();
+            toast(
+              "Currency changed to " +
+                cur +
+                ". Amounts converted at 1 " +
+                old +
+                " = " +
+                k.toFixed(4) +
+                " " +
+                cur +
+                ".",
+            );
+          } else toast("Profile saved");
+          paint();
+          $("cvF").value = cur;
+          save();
+          render();
+          convert();
+        } catch (x) {
+          toast(x.message || "Could not save your profile.");
+        }
+        btn.disabled = false;
+      };
+      $("menu").onclick = () => nav();
+      $("scrim").onclick = () => nav(false);
+      addEventListener("keydown", (e) => {
+        if (e.key === "Escape") nav(false);
+      });
+
+      function askPw() {
+        return new Promise((res) => {
+          const d = $("pwd");
+          $("pwi").value = "";
+          $("pwe").textContent = "";
+          d.showModal();
+          $("fpwd").onsubmit = async (e) => {
+            e.preventDefault();
+            if ((await hash($("pwi").value, unb(U.salt))) === U.hash) {
+              d.close();
+              res(true);
+            } else $("pwe").textContent = "That password is not correct.";
+          };
+          $("pwc").onclick = () => {
+            d.close();
+            res(false);
+          };
+          d.oncancel = () => res(false);
+        });
+      }
+
+      /* ---------- Goal reached: confetti ---------- */
+      function confetti() {
+        if (matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+        const c = $("conf"),
+          x = c.getContext("2d"),
+          cols = [
+            "#6f66e6",
+            "#e0a526",
+            "#2fb67c",
+            "#d9534f",
+            "#4aa3ff",
+            "#ff7ab8",
+          ];
+        c.width = innerWidth;
+        c.height = innerHeight;
+        c.style.display = "block";
+        const P = Array.from({ length: 170 }, () => ({
+          x: innerWidth / 2,
+          y: innerHeight * 0.4,
+          vx: (Math.random() - 0.5) * 18,
+          vy: -4 - Math.random() * 14,
+          s: 5 + Math.random() * 7,
+          r: Math.random() * 6,
+          vr: (Math.random() - 0.5) * 0.4,
+          c: cols[(Math.random() * 6) | 0],
+        }));
+        let f = 0;
+        (function t() {
+          x.clearRect(0, 0, c.width, c.height);
+          P.forEach((p) => {
+            p.vy += 0.35;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.99;
+            p.r += p.vr;
+            x.save();
+            x.translate(p.x, p.y);
+            x.rotate(p.r);
+            x.fillStyle = p.c;
+            x.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6);
+            x.restore();
+          });
+          if (++f < 230) requestAnimationFrame(t);
+          else {
+            x.clearRect(0, 0, c.width, c.height);
+            c.style.display = "none";
+          }
+        })();
+      }
+      function celebrate(g) {
+        $("congT").textContent =
+          `You reached your goal: ${g.name}. ${fmt(g.target)} saved. The goal has been cleared from your list.`;
+        confetti();
+        $("cong").showModal();
+      }
+      $("congOk").onclick = () => $("cong").close();
+
+      /* ---------- Storage on this device (a folder you pick, outside the browser) ---------- */
+      const idb = (m, k, v) =>
+        new Promise((res, rej) => {
+          const r = indexedDB.open("ledger", 1);
+          r.onupgradeneeded = () => r.result.createObjectStore("h");
+          r.onsuccess = () => {
+            const s = r.result
+                .transaction("h", m === "get" ? "readonly" : "readwrite")
+                .objectStore("h"),
+              q =
+                m === "get"
+                  ? s.get(k)
+                  : m === "del"
+                    ? s.delete(k)
+                    : s.put(v, k);
+            q.onsuccess = () => res(q.result);
+            q.onerror = () => rej(q.error);
+          };
+          r.onerror = () => rej(r.error);
+        });
+      let DIR = null;
+      const lname = () =>
+        "expensiz-" + U.email.replace(/[^a-z0-9]/g, "_") + ".enc.json";
+      async function dirInit() {
+        DIR = null;
+        try {
+          DIR = (await idb("get", "dir:" + U.email)) || null;
+        } catch (e) {}
+        dstat();
+      }
+      async function dirPerm(h, ask) {
+        const o = { mode: "readwrite" };
+        return (
+          (await h.queryPermission(o)) === "granted" ||
+          (ask && (await h.requestPermission(o)) === "granted")
+        );
+      }
+      async function dirWrite(ask) {
+        if (!DIR || !(await dirPerm(DIR, ask))) return false;
+        const w = await (
+          await DIR.getFileHandle(lname(), { create: true })
+        ).createWritable();
+        await w.write(JSON.stringify(await seal(D)));
+        await w.close();
+        LS.set("nl_ld_" + U.email, Date.now());
+        return true;
+      }
+      function dstat() {
+        const t = LS.get("nl_ld_" + U.email, 0);
+        $("dst").textContent = !window.showDirectoryPicker
+          ? "This browser cannot pick a folder. Use Chrome or Edge on a computer, or use the export and import buttons."
+          : DIR
+            ? `Saving to the folder "${DIR.name}". Last saved: ${t ? new Date(t).toLocaleString() : "not yet"}. After reopening Expensiz, press Allow access once to resume.`
+            : "No folder chosen yet.";
+      }
+      $("dpick").onclick = async () => {
+        if (!window.showDirectoryPicker) return dstat();
+        try {
+          DIR = await showDirectoryPicker({ mode: "readwrite" });
+          await idb("put", "dir:" + U.email, DIR);
+          await dirWrite(true);
+          dstat();
+          toast("Folder connected");
+        } catch (e) {
+          if (e.name !== "AbortError") toast("Could not use that folder.");
+        }
+      };
+      $("dallow").onclick = async () => {
+        try {
+          if (!DIR) return toast("Choose a folder first.");
+          toast(
+            (await dirWrite(true))
+              ? "Saving to your folder"
+              : "Access was not granted.",
+          );
+          dstat();
+        } catch (e) {
+          toast("Could not reach the folder.");
+        }
+      };
+      $("drest").onclick = async () => {
+        try {
+          if (!DIR || !(await dirPerm(DIR, true)))
+            return toast("Choose a folder and allow access first.");
+          const f = await (await DIR.getFileHandle(lname())).getFile();
+          if (
+            !confirm(
+              "Replace the data in Expensiz with the copy in this folder?",
+            )
+          )
+            return;
+          await applyBackup(JSON.parse(await f.text()));
+          toast("Restored from folder");
+        } catch (e) {
+          toast(
+            e.name === "NotFoundError"
+              ? "No Expensiz file in that folder."
+              : e.message,
+          );
+        }
+      };
+      $("dexp").onclick = async () => {
+        if (!(await askPw())) return;
+        logS("Backup file exported");
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(
+          new Blob([JSON.stringify(await seal(D))], {
+            type: "application/json",
+          }),
+        );
+        a.download = lname();
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      };
+      $("dimp").onclick = () => $("dfile").click();
+      $("dfile").onchange = async (e) => {
+        const f = e.target.files[0];
+        e.target.value = "";
+        if (!f || !confirm("Replace the data in Expensiz with this backup?"))
+          return;
+        try {
+          await applyBackup(JSON.parse(await f.text()));
+          toast("Backup restored");
+        } catch (x) {
+          toast(x.message);
+        }
+      };
+
+      /* ---------- Danger zone ---------- */
+      async function wipe() {
+        if (!(await askPw())) return;
+        if (
+          !confirm(
+            "This permanently deletes all your Expensiz data from this device and from your cloud backup. Your account stays. Continue?",
+          )
+        )
+          return;
+        if (D.mega) {
+          if (!navigator.onLine)
+            return toast(
+              "Connect to the internet so your cloud backup can be deleted too.",
+            );
+          try {
+            const s = await ustore(),
+              f = bfile(s);
+            if (f) await f.delete(true);
+          } catch (e) {
+            return toast("Could not delete the cloud backup: " + e.message);
+          }
+        }
+        try {
+          if (DIR && (await dirPerm(DIR, true))) await DIR.removeEntry(lname());
+        } catch (e) {}
+        const em = U.email;
+        ["nl_e_", "nl_d_", "nl_ld_", "nl_lb_"].forEach((p) =>
+          localStorage.removeItem(p + em),
+        );
+        localStorage.removeItem("nl_stay");
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith("nl_fx_"))
+          .forEach((k) => localStorage.removeItem(k));
+        try {
+          await idb("del", "key:" + em);
+          await idb("del", "dir:" + em);
+        } catch (e) {}
+        location.reload();
+      }
+      $("wipe").onclick = wipe;
+      if (!CFG.API_URL)
+        $("fup").insertAdjacentHTML(
+          "afterend",
+          '<p class="lbl">Server not connected: accounts will only exist on this device.</p>',
+        );
+      /* ---------- Edit expenses, filters, categories, reports ---------- */
+      let locked = 0,
+        hid = 0,
+        SETUP = null,
+        NEWRC = null,
+        BIOA = false,
+        ED = null;
+      function openEd(id) {
+        const e = D.exp.find((x) => String(x.id) === id);
+        if (!e) return;
+        ED = e;
+        fillCats();
+        $("ea").value = e.amt;
+        $("edt").value = e.date;
+        $("edc").value = e.desc;
+        $("ec").value = e.cat;
+        $("ded").showModal();
+      }
+      $("fed").onsubmit = (e) => {
+        e.preventDefault();
+        const a = parseFloat($("ea").value);
+        if (!(a > 0)) return toast("Enter an amount greater than zero.");
+        Object.assign(ED, {
+          amt: a,
+          date: $("edt").value,
+          desc: $("edc").value.trim(),
+          cat: $("ec").value,
+        });
+        $("ded").close();
+        save();
+        render();
+        toast("Expense updated");
+      };
+      $("edx").onclick = () => $("ded").close();
+      $("flt").oninput = $("flt").onchange = renderList;
+      $("fclr").onclick = () => {
+        ["fc", "fau", "ff", "ft", "fmn", "fmx"].forEach(
+          (i) => ($(i).value = ""),
+        );
+        $("fso").value = "new";
+        $("gs").value = "";
+        renderList();
+      };
+      const dupC = (n, i) =>
+        CATS().some(
+          (c, j) =>
+            c[0].toLowerCase() === n.toLowerCase() &&
+            (i < 0 || j !== DEF.length + i),
+        );
+      function renderCats() {
+        const l = $("clist");
+        if (!D || l.contains(document.activeElement)) return;
+        l.innerHTML =
+          D.cats
+            .map(
+              (c, i) =>
+                `<div class="chip"><span class="row" style="flex-wrap:nowrap"><input type="color" data-cc="${i}" value="${c.c}" style="width:44px;padding:2px" aria-label="Colour"><input data-cn="${i}" value="${esc(c.n)}" maxlength="30" aria-label="Category name"></span><button class="x" data-cdel="${i}" aria-label="Delete category">×</button></div>`,
+            )
+            .join("") || '<div class="empty">No custom categories yet.</div>';
+      }
+      $("fcat").onsubmit = (e) => {
+        e.preventDefault();
+        const n = $("cn").value.trim();
+        if (!n || dupC(n, -1))
+          return toast("Pick a name that is not already used.");
+        D.cats.push({ n, c: $("ccol").value });
+        $("cn").value = "";
+        fillCats();
+        save();
+        render();
+        toast("Category added");
+      };
+      $("clist").onchange = (e) => {
+        const t = e.target,
+          i = +(t.dataset.cc ?? t.dataset.cn);
+        if (isNaN(i)) return;
+        const c = D.cats[i];
+        if (t.dataset.cc !== undefined) c.c = t.value;
+        else {
+          const n = t.value.trim();
+          if (!n || dupC(n, i)) {
+            t.value = c.n;
+            return toast("Pick a name that is not already used.");
+          }
+          D.exp.forEach((x) => x.cat === c.n && (x.cat = n));
+          D.rec.forEach((x) => x.cat === c.n && (x.cat = n));
+          c.n = n;
+        }
+        fillCats();
+        save();
+        render();
+      };
+      $("clist").onclick = (e) => {
+        const b = e.target.closest("[data-cdel]");
+        if (!b) return;
+        const i = +b.dataset.cdel,
+          c = D.cats[i];
+        if (!confirm('Delete "' + c.n + '"? Its expenses move to Other.'))
+          return;
+        b.blur();
+        D.exp.forEach((x) => x.cat === c.n && (x.cat = "Other"));
+        D.rec.forEach((x) => x.cat === c.n && (x.cat = "Other"));
+        D.cats.splice(i, 1);
+        fillCats();
+        save();
+        render();
+      };
+
+      const pmo = (m) =>
+        iso(new Date(+m.slice(0, 4), +m.slice(5, 7) - 2, 1)).slice(0, 7);
+      const pct = (a, b) =>
+        b
+          ? (a >= b ? "+" : "") +
+            Math.round(((a - b) / Math.abs(b)) * 100) +
+            "%"
+          : "–";
+      function renderRep() {
+        const m = $("rm").value || ($("rm").value = today().slice(0, 7)),
+          S = (k) => {
+            const e = tot(D.exp.filter((x) => x.date.startsWith(k))),
+              i = tot(D.inc.filter((x) => x.date.startsWith(k)));
+            return { e, i, s: i - e };
+          },
+          c = S(m),
+          p = S(pmo(m)),
+          CT = (k) => {
+            const o = {};
+            D.exp
+              .filter((x) => x.date.startsWith(k))
+              .forEach((x) => (o[x.cat] = (o[x.cat] || 0) + x.amt));
+            return o;
+          },
+          cc = CT(m),
+          pc = CT(pmo(m)),
+          rows = Object.entries(cc)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5),
+          g = tot(D.con.filter((x) => x.date.startsWith(m)));
+        const T = (l, v) =>
+            `<div class="card st"><div class="lbl">${l}</div><b>${v}</b></div>`,
+          cmp = (l, a, b) =>
+            `<div class="chip"><span>${l}</span><span>${fmt(a)} <small class="lbl">vs ${fmt(b)} (${pct(a, b)})</small></span></div>`;
+        const ms = [...Array(6)].map((_, i) => {
+            let k = m;
+            for (let j = 0; j < 5 - i; j++) k = pmo(k);
+            return k;
+          }),
+          sv = ms.map(S),
+          mx = Math.max(...sv.map((x) => Math.max(x.e, x.i)), 1);
+        $("rep").innerHTML =
+          `<h2>Monthly report: ${new Date(m + "-01T00:00:00").toLocaleString("en", { month: "long", year: "numeric" })} · ${esc(U.first + " " + U.last)}</h2><div class="g4">${T("Income", fmt(c.i))}${T("Expenses", fmt(c.e))}${T("Savings", fmt(c.s))}${T("Savings rate", c.i ? Math.round((c.s / c.i) * 100) + "%" : "–")}</div><div class="g2x"><div class="card"><h2>Biggest spending categories</h2>${rows.map(([n, x]) => `<div class="cb"><div><span><span class="dot" style="background:${colorOf(n)}"></span>${esc(n)} · ${Math.round((x / c.e) * 100)}%</span><span>${fmt(x)} <small class="lbl">${pct(x, pc[n] || 0)}</small></span></div><div class="bar"><i style="width:${(x / rows[0][1]) * 100}%;background:${colorOf(n)}"></i></div></div>`).join("") || '<div class="empty">No expenses this month.</div>'}</div><div class="card"><h2>Compared with ${pmo(m)}</h2>${cmp("Income", c.i, p.i)}${cmp("Expenses", c.e, p.e)}${cmp("Savings", c.s, p.s)}<div class="lbl" style="margin-top:8px">Saved to goals this month: ${fmt(g)}</div></div></div><div class="card"><h2>Last 6 months</h2>${ms.map((k, i) => `<div class="cb"><div><span>${k}</span><span>${fmt(sv[i].i)} in · ${fmt(sv[i].e)} out</span></div><div class="bar"><i style="width:${(sv[i].i / mx) * 100}%"></i></div><div class="bar"><i style="width:${(sv[i].e / mx) * 100}%;background:var(--bad)"></i></div></div>`).join("")}</div>`;
+        const il = D.inc
+          .filter((x) => x.date.startsWith(m))
+          .sort((a, b) => b.date.localeCompare(a.date));
+        $("ilist").innerHTML =
+          il
+            .map(
+              (x) =>
+                `<div class="item"><strong>${esc(x.desc)}</strong><span class="amt">${fmt(x.amt)}</span><button class="x" data-idel="${x.id}" aria-label="Delete income">×</button><small>${x.date}</small></div>`,
+            )
+            .join("") ||
+          '<div class="empty">No income recorded for this month.</div>';
+      }
+      $("finc").onsubmit = (e) => {
+        e.preventDefault();
+        const a = parseFloat($("ia").value);
+        if (!(a > 0)) return;
+        D.inc.push({
+          id: Date.now(),
+          amt: a,
+          date: $("idt").value,
+          desc: $("is").value.trim(),
+        });
+        $("ia").value = $("is").value = "";
+        save();
+        render();
+        toast("Income saved");
+      };
+      $("ilist").onclick = (e) => {
+        const b = e.target.closest("[data-idel]");
+        if (b && confirm("Delete this income?")) {
+          D.inc = D.inc.filter((x) => String(x.id) !== b.dataset.idel);
+          save();
+          render();
+        }
+      };
+      $("rm").oninput = renderRep;
+      $("rpdf").onclick = () => {
+        go("reports");
+        const t = document.title;
+        document.title = "Expensiz report " + $("rm").value;
+        print();
+        document.title = t;
+      };
+
+      /* ---------- Security: 2FA, biometric lock, devices, audit log ---------- */
+      const DN = (() => {
+        const u = navigator.userAgent;
+        return (
+          (/Edg\//.test(u)
+            ? "Edge"
+            : /OPR\//.test(u)
+              ? "Opera"
+              : /Firefox\//.test(u)
+                ? "Firefox"
+                : /Chrome\//.test(u)
+                  ? "Chrome"
+                  : /Safari\//.test(u)
+                    ? "Safari"
+                    : "Browser") +
+          " on " +
+          (/Windows/.test(u)
+            ? "Windows"
+            : /Android/.test(u)
+              ? "Android"
+              : /iPhone|iPad/.test(u)
+                ? "iOS"
+                : /Mac/.test(u)
+                  ? "macOS"
+                  : /Linux/.test(u)
+                    ? "Linux"
+                    : "device")
+        );
+      })();
+      const WK = 7 * 864e5,
+        rnd = () => Date.now() + "-" + Math.random().toString(36).slice(2, 6);
+      const b64u = (u) =>
+        b64(u).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      const sha = async (x) =>
+        [
+          ...new Uint8Array(
+            await crypto.subtle.digest("SHA-256", new TextEncoder().encode(x)),
+          ),
+        ]
+          .map((v) => v.toString(16).padStart(2, "0"))
+          .join("");
+      const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+      const b32 = (u) => {
+        let b = 0,
+          v = 0,
+          o = "";
+        for (const x of u) {
+          v = (v << 8) | x;
+          b += 8;
+          while (b >= 5) {
+            o += B32[(v >>> (b - 5)) & 31];
+            b -= 5;
+          }
+          v &= (1 << b) - 1;
+        }
+        if (b) o += B32[(v << (5 - b)) & 31];
+        return o;
+      };
+      const unb32 = (t) => {
+        let b = 0,
+          v = 0;
+        const o = [];
+        for (const c of t) {
+          v = (v << 5) | B32.indexOf(c);
+          b += 5;
+          if (b >= 8) {
+            o.push((v >>> (b - 8)) & 255);
+            b -= 8;
+          }
+          v &= (1 << b) - 1;
+        }
+        return new Uint8Array(o);
+      };
+      async function totp(sec, n) {
+        const k = await crypto.subtle.importKey(
+            "raw",
+            unb32(sec),
+            { name: "HMAC", hash: "SHA-1" },
+            false,
+            ["sign"],
+          ),
+          m = new Uint8Array(8);
+        new DataView(m.buffer).setUint32(4, n);
+        const h = new Uint8Array(await crypto.subtle.sign("HMAC", k, m)),
+          o = h[19] & 15;
+        return String(
+          (((h[o] & 127) << 24) |
+            (h[o + 1] << 16) |
+            (h[o + 2] << 8) |
+            h[o + 3]) %
+            1e6,
+        ).padStart(6, "0");
+      }
+      async function tfaOk(sec, c) {
+        const n = Math.floor(Date.now() / 3e4);
+        for (const d of [0, -1, 1])
+          if ((await totp(sec, n + d)) === c) return true;
+        return false;
+      }
+      async function tfaCheck(c) {
+        c = c.replace(/[^0-9A-Za-z]/g, "").toUpperCase();
+        const t = D.sec.tfa;
+        if (c.length === 6) return tfaOk(t.secret, c);
+        if (c.length === 8) {
+          const i = t.rc.indexOf(await sha(c));
+          if (i < 0) return false;
+          t.rc.splice(i, 1);
+          await logS("Recovery code used", 1);
+          return true;
+        }
+        return false;
+      }
+      const newRC = () =>
+        Array.from({ length: 8 }, () => {
+          const c = b32(crypto.getRandomValues(new Uint8Array(5)));
+          return c.slice(0, 4) + "-" + c.slice(4);
+        });
+      function tfaGate() {
+        return new Promise((ok) => {
+          document.querySelector(".tabs").hidden = true;
+          $("fin").hidden = true;
+          $("ftf").hidden = false;
+          $("tfc").value = "";
+          $("tfc").focus();
+          $("aerr").textContent = "";
+          $("tfx").onclick = () => location.reload();
+          $("ftf").onsubmit = async (e) => {
+            e.preventDefault();
+            if (await tfaCheck($("tfc").value)) {
+              $("ftf").hidden = true;
+              ok();
+            } else {
+              $("aerr").textContent = "That code is not correct.";
+              logS("Two-factor code rejected", 1);
+            }
+          };
+        });
+      }
+      async function bioAvail() {
+        try {
+          return !!(
+            window.PublicKeyCredential &&
+            (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
+          );
+        } catch (e) {
+          return false;
+        }
+      }
+      async function bioEnroll() {
+        const c = await navigator.credentials.create({
+          publicKey: {
+            challenge: crypto.getRandomValues(new Uint8Array(32)),
+            rp: { name: "Expensiz" },
+            user: {
+              id: crypto.getRandomValues(new Uint8Array(16)),
+              name: U.email,
+              displayName: U.first + " " + U.last,
+            },
+            pubKeyCredParams: [
+              { type: "public-key", alg: -7 },
+              { type: "public-key", alg: -257 },
+            ],
+            authenticatorSelection: {
+              authenticatorAttachment: "platform",
+              userVerification: "required",
+              residentKey: "discouraged",
+            },
+            timeout: 60000,
+          },
+        });
+        LS.set("nl_bio_" + U.email, b64(new Uint8Array(c.rawId)));
+      }
+      async function bioAsk(em) {
+        const ch = crypto.getRandomValues(new Uint8Array(32)),
+          a = await navigator.credentials.get({
+            publicKey: {
+              challenge: ch,
+              allowCredentials: [
+                { type: "public-key", id: unb(LS.get("nl_bio_" + em)) },
+              ],
+              userVerification: "required",
+              timeout: 60000,
+            },
+          }),
+          cd = JSON.parse(new TextDecoder().decode(a.response.clientDataJSON)),
+          ad = new Uint8Array(a.response.authenticatorData);
+        return (
+          cd.type === "webauthn.get" &&
+          cd.challenge === b64u(ch) &&
+          (ad[32] & 4) === 4
+        );
+      }
+      function bioGate() {
+        return new Promise((res) => {
+          const em = U.email,
+            L = $("lock"),
+            done = () => {
+              L.hidden = true;
+              locked = 0;
+              res();
+            },
+            go1 = async () => {
+              $("lkm").textContent =
+                "Waiting for Windows Hello or your device lock…";
+              let ok = false;
+              try {
+                ok = await bioAsk(em);
+              } catch (e) {}
+              logS(ok ? "Biometric unlock" : "Biometric unlock failed", !ok);
+              if (ok) done();
+              else $("lkm").textContent = "Could not verify. Try again.";
+            };
+          locked = 1;
+          L.hidden = false;
+          $("lku").onclick = go1;
+          $("lkr").onclick = async () => {
+            if (await askPw()) {
+              localStorage.removeItem("nl_bio_" + em);
+              logS("Biometric lock removed", 1);
+              done();
+            }
+          };
+          $("lko").onclick = () => {
+            LS.set("nl_stay", null);
+            idb("del", "key:" + em)
+              .catch(() => {})
+              .then(() => location.reload());
+          };
+          go1();
+        });
+      }
+      document.addEventListener("visibilitychange", () => {
+        if (!D) return;
+        if (document.hidden) hid = Date.now();
+        else if (
+          hid &&
+          !locked &&
+          Date.now() - hid > 3e5 &&
+          LS.get("nl_bio_" + U.email, null)
+        )
+          bioGate();
+      });
+      function flog(em) {
+        const l = LS.get("nl_flog_" + em, []).filter(
+          (x) => x.t > Date.now() - WK,
+        );
+        l.push({
+          id: rnd(),
+          t: Date.now(),
+          m: "Failed sign-in attempt",
+          d: DN,
+          bad: 1,
+        });
+        LS.set("nl_flog_" + em, l);
+      }
+      function pruneLog() {
+        if (D && D.sec)
+          D.sec.log = D.sec.log
+            .filter((x) => x.t > Date.now() - WK)
+            .sort((a, b) => b.t - a.t);
+      }
+      function logS(m, bad) {
+        if (!D || !D.sec) return;
+        D.sec.log.unshift({
+          id: rnd(),
+          t: Date.now(),
+          m,
+          d: DN,
+          bad: bad ? 1 : 0,
+        });
+        pruneLog();
+        renderSec();
+        return save();
+      }
+      function devUp(on) {
+        const s = D.sec,
+          n = Date.now();
+        let d = s.devs.find((x) => x.id === DEV.id);
+        if (!d) s.devs.push((d = { id: DEV.id, first: n }));
+        Object.assign(d, { name: DN, last: n, at: n, on, rm: 0 });
+      }
+      function mergeSec(a, b) {
+        a = a || {};
+        b = b || {};
+        const m = {},
+          l = {};
+        [...(a.devs || []), ...(b.devs || [])].forEach((x) => {
+          if (!m[x.id] || x.at > m[x.id].at) m[x.id] = x;
+        });
+        [...(a.log || []), ...(b.log || [])].forEach((x) => (l[x.id] = x));
+        return {
+          tfa: a.tfa && a.tfa.on ? a.tfa : b.tfa || null,
+          devs: Object.values(m),
+          log: Object.values(l)
+            .filter((x) => x.t > Date.now() - WK)
+            .sort((x, y) => y.t - x.t),
+        };
+      }
+      function chkRev() {
+        const d = D.sec.devs.find((x) => x.id === DEV.id);
+        if (d && !d.on && d.rm) {
+          LS.set("nl_stay", null);
+          idb("del", "key:" + U.email).catch(() => {});
+          alert("This device was signed out from another device.");
+          location.reload();
+        }
+      }
+      async function secInit(em, key) {
+        D.sec = Object.assign({ tfa: null, devs: [], log: [] }, D.sec);
+        const f = LS.get("nl_flog_" + em, []);
+        if (f.length) {
+          D.sec.log.push(...f);
+          LS.set("nl_flog_" + em, null);
+        }
+        pruneLog();
+        if (!key && D.sec.tfa && D.sec.tfa.on) await tfaGate();
+        if (LS.get("nl_bio_" + em, null)) await bioGate();
+        devUp(true);
+        if (!key) logS("Signed in");
+      }
+      function renderSec() {
+        if (!D || !D.sec || !$("sec2fa")) return;
+        pruneLog();
+        const s = D.sec,
+          t = s.tfa,
+          em = U.email,
+          bo = LS.get("nl_bio_" + em, null),
+          link = SETUP
+            ? `otpauth://totp/Expensiz:${encodeURIComponent(em)}?secret=${SETUP}&issuer=Expensiz`
+            : "";
+        if (document.activeElement && document.activeElement.id === "s2c")
+          return;
+        $("sec2fa").innerHTML =
+          t && t.on
+            ? `<p class="lbl">On. You will be asked for a code from your authenticator app each time you sign in. ${t.rc.length} recovery codes left.</p>${NEWRC ? `<p class="lbl">Save these recovery codes now. Each works once and they will not be shown again.</p><div class="rcs">${NEWRC.join("<br>")}</div>` : ""}<div class="row"><button class="ghost" data-s="rc">New recovery codes</button><button class="dng" data-s="off">Turn off</button></div>`
+            : SETUP
+              ? `<p class="lbl">Scan this with an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy, or type the key in. Then enter the 6-digit code it shows.</p><div id="qr"></div><div class="s2">${SETUP.match(/.{1,4}/g).join(" ")}</div><p><a href="${link}">Open in authenticator app</a></p><label>6-digit code<input id="s2c" inputmode="numeric" maxlength="7" autocomplete="off"></label><div class="row" style="margin-top:8px"><button data-s="ok">Turn on</button><button class="ghost" data-s="cancel">Cancel</button></div>`
+              : '<p class="lbl">After your password, ask for a 6-digit code from an authenticator app when you sign in.</p><button data-s="on">Set up</button>';
+        $("secbio").innerHTML = !BIOA
+          ? '<p class="lbl">Not available here. It needs Windows Hello, Touch ID or a device screen lock, and the app opened over https or localhost.</p>'
+          : bo
+            ? '<p class="lbl">On for this device. After your password (and two-factor code), and each time you reopen the app while staying signed in, you unlock with Windows Hello or your device lock.</p><div class="row"><button class="ghost" data-s="lock">Lock now</button><button class="dng" data-s="boff">Turn off</button></div>'
+            : '<p class="lbl">Use Windows Hello or your device authentication to unlock Expensiz on this device.</p><button data-s="bon">Turn on</button>';
+        $("secdev").innerHTML = [...s.devs]
+          .sort((a, b) => b.last - a.last)
+          .map(
+            (d) =>
+              `<div class="item"><strong>${esc(d.name)}${d.id === DEV.id ? " (this device)" : ""}</strong><span class="lbl">${d.on ? "Signed in" : "Signed out"}</span>${d.on && d.id !== DEV.id ? `<button class="ghost" data-dso="${d.id}">Sign out</button>` : "<span></span>"}<small>First seen ${new Date(d.first).toLocaleDateString()} · last active ${new Date(d.last).toLocaleString()}</small></div>`,
+          )
+          .join("");
+        $("seclog").innerHTML =
+          s.log
+            .map(
+              (l) =>
+                `<div class="item"><span${l.bad ? ' style="color:var(--bad)"' : ""}>${esc(l.m)}</span><span></span><span></span><small>${new Date(l.t).toLocaleString()} · ${esc(l.d)}</small></div>`,
+            )
+            .join("") ||
+          '<div class="empty">No activity in the last 7 days.</div>';
+      }
+      $("v-security").onclick = async (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        const a = b.dataset.s,
+          s = D.sec;
+        if (b.dataset.dso) {
+          const d = s.devs.find((x) => x.id === b.dataset.dso);
+          if (
+            d &&
+            confirm(
+              "Sign out " +
+                d.name +
+                "? It is signed out the next time it syncs.",
+            )
+          ) {
+            Object.assign(d, { on: false, at: Date.now(), rm: 1 });
+            await logS("Signed out " + d.name + " remotely");
+          }
+        } else if (a === "on") {
+          SETUP = b32(crypto.getRandomValues(new Uint8Array(20)));
+          renderSec();
+          try {
+            await loadJS(
+              "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js",
+            );
+          } catch (x) {}
+          if (window.QRCode && $("qr")) {
+            $("qr").innerHTML = "";
+            new QRCode($("qr"), {
+              text:
+                "otpauth://totp/Expensiz:" +
+                encodeURIComponent(U.email) +
+                "?secret=" +
+                SETUP +
+                "&issuer=Expensiz",
+              width: 140,
+              height: 140,
+            });
+          }
+        } else if (a === "cancel") {
+          SETUP = null;
+          renderSec();
+        } else if (a === "ok") {
+          if (await tfaOk(SETUP, $("s2c").value.replace(/\s/g, ""))) {
+            const rc = newRC();
+            s.tfa = {
+              on: 1,
+              secret: SETUP,
+              rc: await Promise.all(rc.map((x) => sha(x.replace("-", "")))),
+            };
+            NEWRC = rc;
+            SETUP = null;
+            await logS("Two-factor authentication turned on");
+          } else toast("That code is not correct.");
+        } else if (a === "rc") {
+          if (await askPw()) {
+            const rc = newRC();
+            s.tfa.rc = await Promise.all(
+              rc.map((x) => sha(x.replace("-", ""))),
+            );
+            NEWRC = rc;
+            await logS("Recovery codes regenerated");
+          }
+        } else if (a === "off") {
+          if (await askPw()) {
+            s.tfa = null;
+            NEWRC = null;
+            await logS("Two-factor authentication turned off", 1);
+          }
+        } else if (a === "bon") {
+          try {
+            await bioEnroll();
+            await logS("Biometric lock turned on");
+            toast("Biometric lock is on for this device");
+          } catch (x) {
+            toast(
+              x.name === "NotAllowedError"
+                ? "Setup was cancelled."
+                : "Biometric lock is not available here. Open the app over https or localhost.",
+            );
+          }
+        } else if (a === "boff") {
+          if (await askPw()) {
+            localStorage.removeItem("nl_bio_" + U.email);
+            await logS("Biometric lock turned off", 1);
+          }
+        } else if (a === "lock") bioGate();
+        renderSec();
+      };
+      bioAvail().then((v) => {
+        BIOA = v;
+        renderSec();
+      });
+      setInterval(() => {
+        if (D) {
+          pruneLog();
+          renderSec();
+        }
+      }, 36e5);
+
+      /* ---------- Start ---------- */
+      (async () => {
+        const s = LS.get("nl_stay", null);
+        if (!s || s.exp < Date.now() || !LS.get("nl_users", {})[s.email])
+          return;
+        try {
+          const k = await idb("get", "key:" + s.email);
+          if (!k) return;
+          await start(s.email, null, true, k);
+          LS.set("nl_stay", { email: s.email, exp: Date.now() + 30 * 864e5 });
+        } catch (e) {
+          LS.set("nl_stay", null);
+        }
+      })();
+    </script>
+  </body>
+</html>
