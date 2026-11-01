@@ -10,6 +10,7 @@ Thumbs.db
 # Environment variables and secrets
 .env
 .env.*
+*.enc
 
 # Logs
 *.log
@@ -34,3 +35,5 @@ yarn-error.log*
 tmp/
 temp/
 *.tmp
+
+expensiz-accounts.json.enc
