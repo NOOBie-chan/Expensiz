@@ -977,6 +977,41 @@
         opacity: 0.55;
         pointer-events: none;
       }
+      .cvrow {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 10px;
+        align-items: end;
+      }
+      .swp {
+        font-size: 20px;
+        line-height: 1;
+        padding: 9px 12px;
+      }
+      .fl.z {
+        fill: #a3a3ad;
+      }
+      :root[data-theme="dark"] .fl.z {
+        fill: #5d5d68;
+      }
+      .otp {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .otp input {
+        width: 44px;
+        height: 52px;
+        padding: 0;
+        text-align: center;
+        font: 700 22px var(--sans);
+      }
+      input[type="radio"] {
+        width: auto;
+      }
+      .grid.one {
+        grid-template-columns: 1fr !important;
+      }
       #astat {
         margin: 8px 0 0;
         min-height: 0;
@@ -1276,15 +1311,15 @@
             </div>
             <div class="card">
               <h2>Streak</h2>
-              <div class="tally" id="tally1" aria-hidden="true"></div>
+              <div class="num" id="tally1" style="font-size: 30px"></div>
               <div class="lbl" id="ssum" style="margin-top: 10px"></div>
             </div>
           </div>
         </section>
 
         <section id="v-expenses" hidden>
-          <div class="grid two">
-            <div class="card">
+          <div class="grid two" id="exgrid">
+            <div class="card" id="addcard">
               <h2>Add an expense</h2>
               <form id="fexp" class="fg">
                 <label
@@ -1499,23 +1534,11 @@
             <div class="card">
               <div class="lbl">On budget</div>
               <div class="num" id="bn"></div>
-              <div
-                class="tally"
-                id="tally2"
-                aria-hidden="true"
-                style="margin: 12px 0"
-              ></div>
-              <div class="lbl" id="bnote"></div>
+              <div class="lbl" id="bnote" style="margin-top: 12px"></div>
             </div>
             <div class="card">
               <div class="lbl">Saving</div>
               <div class="num" id="sn"></div>
-              <div
-                class="tally"
-                id="tally3"
-                aria-hidden="true"
-                style="margin: 12px 0"
-              ></div>
               <div class="lbl" id="snote" style="margin-top: 12px"></div>
             </div>
           </div>
@@ -1532,8 +1555,18 @@
                   type="number"
                   step="any"
                   value="1" /></label
-              ><label>From<select id="cvF"></select></label
-              ><label>To<select id="cvT"></select></label>
+              ><div class="full cvrow">
+                <label>From<select id="cvF"></select></label
+                ><button
+                  type="button"
+                  class="ghost swp"
+                  id="cvS"
+                  title="Swap currencies"
+                  aria-label="Swap currencies"
+                >
+                  ⇄</button
+                ><label>To<select id="cvT"></select></label>
+              </div>
             </div>
             <div class="lbl" id="cvN" style="margin-top: 6px"></div>
             <div
@@ -1651,6 +1684,12 @@
                     value="#6f66e6"
                     style="width: 48px; padding: 2px"
                     aria-label="Colour"
+                  /><input
+                    id="ck"
+                    hidden
+                    placeholder="Keywords that pick this category, separated by commas (e.g. gym, fitness)"
+                    aria-label="Keywords"
+                    style="flex-basis: 100%"
                   /><button type="submit">Add</button>
                 </form>
                 <div id="clist"></div>
@@ -1683,14 +1722,32 @@
               </div>
             </div>
             <div class="card">
-              <h2>Bill reminders</h2>
+              <h2>Notifications</h2>
               <p class="lbl">
-                Reminders start 3 days before a recurring bill is due. They show
-                on Overview, and as a browser notification while Expensiz is
-                open.
+                Real notifications on this device (Windows or Android), not just
+                messages inside the app. Choose what you want to hear about.
               </p>
-              <button id="rem">Turn on notifications</button>
+              <div class="row">
+                <button id="rem">Turn on notifications</button
+                ><button class="ghost" id="remt">Send a test</button>
+              </div>
               <p class="lbl" id="remst"></p>
+              <label class="chk"
+                ><input id="ntb" type="checkbox" /> Bills due in the next 3
+                days</label
+              >
+              <label class="chk"
+                ><input id="ntg" type="checkbox" /> Budget alerts at 80% and
+                100% used</label
+              >
+              <label class="chk"
+                ><input id="ntd" type="checkbox" /> Daily reminder to log your
+                spending at
+                <input
+                  id="ntt"
+                  type="time"
+                  style="width: auto; margin-left: 6px"
+              /></label>
             </div>
             <div class="card">
               <h2>Cloud backup (MEGA)</h2>
@@ -1710,6 +1767,17 @@
                 ><label class="full"
                   >Your MEGA password<input id="mp" type="password" required
                 /></label>
+                <label class="full chk"
+                  ><input type="radio" id="m2" name="m2" value="1" /> Two-Factor
+                  Authentication (my MEGA account uses Google Authenticator)</label
+                >
+                <div class="full" id="m2w" hidden>
+                  <span class="lbl"
+                    >Enter the 6-digit code from Google Authenticator for
+                    MEGA</span
+                  >
+                  <div class="otp" id="m2box"></div>
+                </div>
                 <div class="full row">
                   <button type="submit">Connect and back up</button
                   ><button type="button" id="mnow" hidden>Back up now</button
@@ -1793,6 +1861,42 @@
         <div class="row">
           <button type="submit">Confirm</button
           ><button type="button" class="ghost" id="pwc">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="m2d">
+      <form id="fm2d" method="dialog">
+        <h2>MEGA two-factor code</h2>
+        <p class="lbl">
+          Enter the 6-digit code from Google Authenticator for your MEGA
+          account.
+        </p>
+        <div class="otp" id="m2dbox"></div>
+        <p class="err" id="m2de" role="alert"></p>
+        <div class="row">
+          <button type="submit">Confirm</button
+          ><button type="button" class="ghost" id="m2dc">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="tfd">
+      <form id="ftfd" method="dialog">
+        <h2>Two-factor check</h2>
+        <p class="lbl">
+          Enter the 6-digit code from your authenticator app, or a recovery
+          code, to continue.
+        </p>
+        <label
+          >Code<input
+            id="tfdi"
+            autocomplete="one-time-code"
+            required
+            maxlength="12"
+        /></label>
+        <p class="err" id="tfde" role="alert"></p>
+        <div class="row">
+          <button type="submit">Confirm</button
+          ><button type="button" class="ghost" id="tfdc">Cancel</button>
         </div>
       </form>
     </dialog>
@@ -2778,29 +2882,76 @@
           "i",
         ),
       ]);
+      const kwRe = (w) =>
+        new RegExp(
+          "(?:^|[^a-z0-9])(?:" +
+            w
+              .map((x) => esc2(x) + (x.length <= 5 ? "(?![a-z0-9])" : ""))
+              .join("|") +
+            ")",
+          "i",
+        );
+      /* "500mb", "1.5 GB", "mb" on their own, but not words like "tomb" */
+      const MBGB = /(?:^|[^a-z])(?:\d+(?:[.,]\d+)?\s*)?(?:mb|gb)(?![a-z])/i;
+      const customKW = () =>
+        ((D && D.cats) || [])
+          .filter((c) => c.k && c.k.length)
+          .map((c) => [c.n, kwRe(c.k)]);
       const guess = (d) => {
+        for (const [c, r] of customKW()) if (r.test(d)) return c;
+        if (MBGB.test(d)) return "Internet & Airtime";
         for (const [c, r] of KWR) if (r.test(d)) return c;
         return null;
       };
+      const parseKw = (v) =>
+        [
+          ...new Set(
+            v
+              .split(/[,\n]/)
+              .map((x) => x.trim().toLowerCase().slice(0, 30))
+              .filter((x) => x.length >= 2),
+          ),
+        ];
+      function kwOwner(w, skip) {
+        for (const [c, l] of Object.entries(KW)) if (l.includes(w)) return c;
+        const cs = (D && D.cats) || [];
+        for (let i = 0; i < cs.length; i++)
+          if (i !== skip && (cs[i].k || []).includes(w)) return cs[i].n;
+        return null;
+      }
+      function fixMb() {
+        D.exp.forEach((e) => {
+          if ((!e.cat || e.cat === "Other") && MBGB.test(e.desc))
+            e.cat = "Internet & Airtime";
+        });
+      }
 
-      const CURS = [
-        "NGN",
-        "USD",
-        "GBP",
-        "EUR",
-        "GHS",
-        "KES",
-        "ZAR",
-        "CAD",
-        "AUD",
-        "AED",
-        "INR",
-        "JPY",
-        "CNY",
-        "CHF",
-        "XOF",
-        "EGP",
-      ];
+      const CN = (() => {
+        try {
+          return new Intl.DisplayNames(["en"], { type: "currency" });
+        } catch (e) {
+          return null;
+        }
+      })();
+      const curName = (c) => {
+        try {
+          return (CN && CN.of(c)) || c;
+        } catch (e) {
+          return c;
+        }
+      };
+      const CURS = ["NGN", "USD", "GBP", "EUR"].concat(
+        (
+          "AED AFN ALL AMD AOA ARS AUD AZN BAM BDT BGN BHD BIF BRL BWP BYN CAD CDF CHF CLP CNY COP CRC CZK DJF DKK DZD EGP ERN ETB FJD GEL GHS GMD GNF HKD HRK HUF IDR ILS INR IQD ISK JMD JOD JPY KES KGS KHR KRW KWD KZT LAK LBP LKR LRD LSL LYD MAD MGA MKD MMK MNT MUR MWK MXN MYR MZN NAD NOK NPR NZD OMR PEN PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SCR SDG SEK SGD SLL SOS SZL THB TJS TND TOP TRY TTD TWD TZS UAH UGX UYU UZS VES VND XAF XOF YER ZAR ZMW ZWL"
+        )
+          .split(" ")
+          .filter((c) => c !== "HRK" && c !== "SLL" && c !== "VES" && c !== "ZWL")
+          .sort((x, y) => curName(x).localeCompare(curName(y))),
+      );
+      const curOpts = () =>
+        CURS.map((c) => `<option value="${c}">${curName(c)} (${c})</option>`).join(
+          "",
+        );
       let U = null,
         D = null,
         touched = false;
@@ -2819,7 +2970,10 @@
         t.textContent = m;
         t.style.display = "block";
         clearTimeout(toast.h);
-        toast.h = setTimeout(() => (t.style.display = "none"), 3000);
+        toast.h = setTimeout(
+          () => (t.style.display = "none"),
+          Math.max(3000, m.length * 60),
+        );
       }
 
       /* ---------- Theme ---------- */
@@ -3061,7 +3215,7 @@
             $("aerr").textContent = "";
           }),
       );
-      $("scur").innerHTML = CURS.map((c) => `<option>${c}</option>`).join("");
+      $("scur").innerHTML = curOpts();
       $("out").onclick = async () => {
         if (D && D.sec) {
           devUp(false);
@@ -3088,6 +3242,7 @@
         rec: [],
         bestB: 0,
         bestS: 0,
+        bestSD: 0,
         mega: null,
         auto: false,
         goalsDone: 0,
@@ -3194,11 +3349,10 @@
         $("idt").value = today();
         $("rm").value = today().slice(0, 7);
         fillCats();
-        $("cvF").innerHTML = $("cvT").innerHTML = CURS.map(
-          (c) => `<option>${c}</option>`,
-        ).join("");
+        $("cvF").innerHTML = $("cvT").innerHTML = curOpts();
         $("cvF").value = U.cur;
         $("cvT").value = U.cur === "USD" ? "NGN" : "USD";
+        fixMb();
         recurring();
         render();
         bstat();
@@ -3249,13 +3403,13 @@
         return { n, days };
       }
       function sStreak() {
-        const w = new Set(D.con.map((c) => wkStart(c.date)));
-        let k = wkStart(today()),
+        const w = new Set(D.con.map((c) => c.date));
+        let k = today(),
           n = 0;
-        if (!w.has(k)) k = addDays(k, -7);
+        if (!w.has(k)) k = addDays(k, -1);
         while (w.has(k)) {
           n++;
-          k = addDays(k, -7);
+          k = addDays(k, -1);
         }
         return n;
       }
@@ -3328,17 +3482,18 @@
         ]),
         [
           [1, "Saver’s start"],
-          [2, "Two-week saver"],
-          [4, "Month of saving"],
-          [8, "Steady stacker"],
-          [12, "Quarter keeper"],
-          [26, "Half-year hoarder"],
-          [52, "Year of savings"],
+          [3, "Three-day saver"],
+          [7, "Week of saving"],
+          [14, "Steady stacker"],
+          [30, "Month of saving"],
+          [90, "Quarter keeper"],
+          [180, "Half-year hoarder"],
+          [365, "Year of savings"],
         ].map(([t, n]) => [
           "◆",
           n,
-          "Save " + t + (t === 1 ? " week" : " weeks") + " in a row",
-          () => D.bestS,
+          "Save " + t + (t === 1 ? " day" : " days") + " in a row",
+          () => D.bestSD || 0,
           t,
         ]),
         [
@@ -3551,9 +3706,10 @@
         renderSec();
         renderCats();
         remind();
+        ntCheck();
       }
       function renderList() {
-        const q = $("gs").value.toLowerCase(),
+        const q = $("gs").value.trim().toLowerCase(),
           c = $("fc").value,
           f = $("ff").value,
           t = $("ft").value,
@@ -3561,6 +3717,8 @@
           mx = parseFloat($("fmx").value),
           so = $("fso").value,
           a = $("fau").value;
+        $("addcard").style.display = q ? "none" : "";
+        $("exgrid").classList.toggle("one", !!q);
         const l = D.exp
           .filter(
             (e) =>
@@ -3612,30 +3770,29 @@
       function renderStreaks() {
         const b = bStreak(),
           s = sStreak(),
-          ob = D.bestB + "," + D.bestS;
+          ob = D.bestB + "," + (D.bestSD || 0);
         D.bestB = Math.max(D.bestB, b.n);
-        D.bestS = Math.max(D.bestS, s);
-        if (ob !== D.bestB + "," + D.bestS) save();
-        const html = tallyHTML(b.days);
-        $("tally1").innerHTML = html;
-        $("tally2").innerHTML = html;
-        $("tally3").innerHTML = html;
+        D.bestSD = Math.max(D.bestSD || 0, s);
+        if (ob !== D.bestB + "," + D.bestSD) save();
+        $("tally1").innerHTML =
+          flame(b.n ? "" : "z", 36) +
+          `<span>${b.n} ${b.n === 1 ? "day" : "days"}</span>`;
         $("ssum").textContent =
           D.bud.a > 0
-            ? `${b.n}-day budget streak · ${s}-week saving streak`
+            ? `${b.n}-day budget streak · ${s}-day saving streak`
             : "Set a budget to start a streak.";
         $("bn").innerHTML =
-          flame(b.n ? "" : "m", 44) +
+          flame(b.n ? "" : "z", 44) +
           `<span>${b.n} ${b.n === 1 ? "day" : "days"}</span>`;
         $("sn").innerHTML =
-          flame(s ? "" : "m", 44) +
-          `<span>${s} ${s === 1 ? "week" : "weeks"}</span>`;
+          flame(s ? "" : "z", 44) +
+          `<span>${s} ${s === 1 ? "day" : "days"}</span>`;
         $("bnote").textContent =
           D.bud.a > 0
-            ? `Best: ${D.bestB}. Each day you spend within your daily share adds a flame.`
+            ? `Best: ${D.bestB}. Each day you spend within your daily share adds a day to your streak.`
             : "Set a budget in Plan to start.";
         $("snote").textContent =
-          `Best: ${D.bestS}. Add to a savings goal at least once a week.`;
+          `Best: ${D.bestSD || 0}. Add to a savings goal at least once a day.`;
         let n = 0;
         $("badges").innerHTML = BADGES.map(([ic, nm, ds, fn, t]) => {
           const v = fn(),
@@ -4207,20 +4364,128 @@
               `<div class="alert" role="status">${esc(x.r.n)} (${fmt(x.r.amt)}) is due ${w(x)}.</div>`,
           )
           .join("");
-        if ("Notification" in window && Notification.permission === "granted") {
+        if (ntOn() && ntCfg().bills) {
           let c = false;
           l.forEach((x) => {
             const k = x.r.id + x.d;
             if (!D.seen[k]) {
               D.seen[k] = 1;
               c = true;
-              new Notification("Bill due " + w(x), {
-                body: x.r.n + " · " + fmt(x.r.amt),
-              });
+              notify(
+                "Bill due " + w(x),
+                x.r.n + " · " + fmt(x.r.amt),
+                "bill-" + k,
+              );
             }
           });
           if (c) save();
         }
+      }
+      /* ---------- Device notifications ---------- */
+      const ntOn = () =>
+        "Notification" in window && Notification.permission === "granted";
+      const ntCfg = () =>
+        Object.assign(
+          { bills: true, budget: true, daily: true, time: "20:00" },
+          (D && D.nt) || {},
+        );
+      async function notify(title, body, tag) {
+        if (!ntOn()) return false;
+        const o = { body, tag, icon: "icon-192.png", badge: "icon-192.png" };
+        try {
+          const n = new Notification(title, o);
+          n.onclick = () => window.focus();
+          return true;
+        } catch (e) {
+          /* Android Chrome only allows notifications through the service worker */
+          try {
+            const r = await navigator.serviceWorker.ready;
+            await r.showNotification(title, o);
+            return true;
+          } catch (x) {
+            return false;
+          }
+        }
+      }
+      async function ntPeriodic() {
+        try {
+          const r = await navigator.serviceWorker.ready;
+          if (r.periodicSync)
+            await r.periodicSync.register("expensiz-daily", {
+              minInterval: 6 * 36e5,
+            });
+        } catch (e) {}
+      }
+      async function ntCheck() {
+        if (!D || !U || !ntOn()) return;
+        const c = ntCfg(),
+          k = "nl_ns_" + U.email,
+          st = LS.get(k, {}),
+          t = today(),
+          nw = new Date(),
+          hm =
+            String(nw.getHours()).padStart(2, "0") +
+            ":" +
+            String(nw.getMinutes()).padStart(2, "0"),
+          logged = D.exp.some((e) => e.date === t && !e.auto);
+        let ch = false;
+        if (c.budget && D.bud.a > 0) {
+          const [a, b] = range(),
+            sp = tot(D.exp.filter((e) => e.date >= a && e.date <= b)),
+            p = sp / D.bud.a,
+            per = D.bud.p + a,
+            PL = { day: "today", week: "this week", month: "this month" }[
+              D.bud.p
+            ];
+          if (p >= 1 && st.b100 !== per) {
+            st.b100 = st.b80 = per;
+            ch = true;
+            notify(
+              "Over budget",
+              "You are over your budget " + PL + " by " + fmt(sp - D.bud.a) + ".",
+              "b100",
+            );
+          } else if (p >= 0.8 && p < 1 && st.b80 !== per) {
+            st.b80 = per;
+            ch = true;
+            notify(
+              "Budget alert",
+              "You have used " +
+                Math.round(p * 100) +
+                "% of your budget " +
+                PL +
+                ". " +
+                fmt(D.bud.a - sp) +
+                " left.",
+              "b80",
+            );
+          }
+        }
+        if (c.daily && hm >= c.time && st.daily !== t) {
+          st.daily = t;
+          ch = true;
+          if (!logged)
+            notify(
+              "Log today's spending",
+              "You have not added an expense today. Take a minute to record what you spent.",
+              "daily",
+            );
+        }
+        if (ch) LS.set(k, st);
+        try {
+          const cs = await caches.open("expensiz-notify");
+          await cs.put(
+            "_nt",
+            new Response(
+              JSON.stringify({
+                on: !!c.daily,
+                time: c.time,
+                logged: logged ? t : "",
+                notified: st.daily || "",
+              }),
+            ),
+          );
+        } catch (e) {}
       }
       function remst() {
         $("remst").textContent =
@@ -4228,10 +4493,17 @@
             ? "Notifications: " +
               {
                 granted: "on",
-                denied: "blocked in your browser settings",
+                denied: "blocked. Allow them in your device or browser settings",
                 default: "off",
               }[Notification.permission]
-            : "Notifications are not supported in this browser.";
+            : "Notifications are not supported here.";
+        if (D) {
+          const c = ntCfg();
+          $("ntb").checked = c.bills;
+          $("ntg").checked = c.budget;
+          $("ntd").checked = c.daily;
+          $("ntt").value = c.time;
+        }
       }
       $("rem").onclick = async () => {
         if (!("Notification" in window))
@@ -4239,7 +4511,32 @@
         await Notification.requestPermission();
         remst();
         remind();
+        ntPeriodic();
+        if (ntOn()) notify("Expensiz", "Notifications are on.", "hello");
       };
+      $("remt").onclick = async () => {
+        if (!ntOn()) return toast("Turn on notifications first.");
+        if (!(await notify("Expensiz", "This is a test notification.", "test")))
+          toast("The device did not show the notification.");
+      };
+      ["ntb", "ntg", "ntd", "ntt"].forEach(
+        (i) =>
+          ($(i).onchange = () => {
+            D.nt = {
+              bills: $("ntb").checked,
+              budget: $("ntg").checked,
+              daily: $("ntd").checked,
+              time: $("ntt").value || "20:00",
+            };
+            save();
+            ntCheck();
+          }),
+      );
+      setInterval(ntCheck, 60 * 1000);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) ntCheck();
+      });
+      if (ntOn()) ntPeriodic();
 
       /* ---------- Currency converter (live rates when online, last rates when offline) ---------- */
       async function rates(b) {
@@ -4278,26 +4575,115 @@
           `1 ${f} = ${o.r[t].toFixed(4)} ${t} · rates as of ${new Date(o.t).toLocaleString()}.`;
       }
       ["cvA", "cvF", "cvT"].forEach((i) => ($(i).oninput = convert));
+      $("cvS").onclick = () => {
+        const f = $("cvF").value;
+        $("cvF").value = $("cvT").value;
+        $("cvT").value = f;
+        convert();
+      };
 
       /* ---------- MEGA backup (encrypted) ---------- */
       const bname = () =>
         "expensiz-backup-" + U.email.replace(/[^a-z0-9]/g, "_") + ".json";
-      async function ustore() {
+      let M2C = "";
+      function otpMake(box) {
+        box.innerHTML = "";
+        for (let i = 0; i < 6; i++) {
+          const x = document.createElement("input");
+          x.inputMode = "numeric";
+          x.maxLength = 1;
+          x.autocomplete = "off";
+          x.setAttribute("aria-label", "Digit " + (i + 1));
+          box.appendChild(x);
+        }
+        box.oninput = (e) => {
+          const t = e.target,
+            v = t.value.replace(/\D/g, "");
+          t.value = v.slice(-1);
+          if (v && t.nextElementSibling) t.nextElementSibling.focus();
+        };
+        box.onkeydown = (e) => {
+          if (
+            e.key === "Backspace" &&
+            !e.target.value &&
+            e.target.previousElementSibling
+          )
+            e.target.previousElementSibling.focus();
+        };
+        box.onpaste = (e) => {
+          const v = (e.clipboardData.getData("text") || "")
+            .replace(/\D/g, "")
+            .slice(0, 6);
+          if (!v) return;
+          e.preventDefault();
+          [...box.children].forEach((x, i) => (x.value = v[i] || ""));
+          box.children[Math.min(v.length, 5)].focus();
+        };
+      }
+      const otpVal = (box) => [...box.children].map((x) => x.value).join("");
+      otpMake($("m2box"));
+      $("m2").onclick = function () {
+        if (this.dataset.on === "1") {
+          this.checked = false;
+          this.dataset.on = "0";
+        } else this.dataset.on = "1";
+        $("m2w").hidden = !this.checked;
+        if (this.checked) $("m2box").children[0].focus();
+      };
+      function ask6() {
+        return new Promise((res) => {
+          const d = $("m2d");
+          otpMake($("m2dbox"));
+          $("m2de").textContent = "";
+          d.showModal();
+          $("m2dbox").children[0].focus();
+          $("fm2d").onsubmit = (e) => {
+            e.preventDefault();
+            const v = otpVal($("m2dbox"));
+            if (v.length !== 6) {
+              $("m2de").textContent = "Enter all 6 digits.";
+              return;
+            }
+            d.close();
+            res(v);
+          };
+          $("m2dc").onclick = () => {
+            d.close();
+            res(null);
+          };
+          d.oncancel = () => res(null);
+        });
+      }
+      async function ustore(quiet) {
         if (ust) return ust;
         if (!D.mega) throw new Error("Connect your MEGA account first.");
         await loadMega();
+        let code = "";
+        if (D.mega.tf) {
+          code = M2C;
+          M2C = "";
+          if (!code) {
+            if (quiet) throw new Error("MEGA code needed");
+            code = await ask6();
+            if (!code) throw new Error("MEGA sign-in cancelled.");
+          }
+        }
         try {
-          ust = await new mega.Storage({
-            email: D.mega.e || U.email,
-            password: D.mega.p,
-          }).ready;
+          ust = await new mega.Storage(
+            Object.assign(
+              { email: D.mega.e || U.email, password: D.mega.p },
+              code ? { secondFactorCode: code } : {},
+            ),
+          ).ready;
         } catch (e) {
           const m = String((e && e.message) || e);
           throw new Error(
-            /ENOENT|-9\b/.test(m)
-              ? "MEGA did not accept that email and password. Use the exact email you log in to MEGA with. If your MEGA account has two-factor authentication, it is not supported here."
-              : /EMFA|-26|factor/i.test(m)
-                ? "This MEGA account uses two-factor authentication, which is not supported here. Use a MEGA account without it."
+            /ENOENT|-9\b|EFAILED|-25\b/.test(m)
+              ? D.mega.tf
+                ? "MEGA did not accept the email, password or code. Codes change every 30 seconds, so enter a fresh one."
+                : "MEGA did not accept that email and password. Use the exact email you log in to MEGA with. If your MEGA account uses Google Authenticator, tick Two-Factor Authentication and enter the code."
+              : /EMFA|-26|factor/i.test(m) && !D.mega.tf
+                ? "This MEGA account uses two-factor authentication. Tick Two-Factor Authentication and enter the 6-digit code."
                 : "Could not open your MEGA account (" + m + ").",
           );
         }
@@ -4305,8 +4691,8 @@
       }
       const bfile = (s) =>
         s.root.children.find((c) => c.name === bname() && !c.directory);
-      async function backup() {
-        const s = await ustore(),
+      async function backup(quiet) {
+        const s = await ustore(quiet),
           f = bfile(s),
           body = JSON.stringify(await seal(D));
         if (f) await f.delete(true);
@@ -4322,7 +4708,7 @@
             return bstat();
           }
           try {
-            await backup();
+            await backup(true);
             pend = false;
           } catch (e) {
             pend = true;
@@ -4373,14 +4759,19 @@
         $("mautoW").hidden = !D.mega;
         $("mauto").checked = !!D.auto;
         $("bst").textContent = D.mega
-          ? `Connected to ${D.mega.e || U.email}. Auto backup is ${D.auto ? "on" : "off"}. Last backup: ${lb ? new Date(lb).toLocaleString() : "not yet"}${pend ? ". Waiting for internet to back up." : "."}`
+          ? `Connected to ${D.mega.e || U.email}. Auto backup is ${D.auto ? "on" : "off"}. Last backup: ${lb ? new Date(lb).toLocaleString() : "not yet"}${pend ? (D.mega.tf && !ust ? ". Press Back up now to enter your MEGA code." : ". Waiting for internet to back up.") : "."}`
           : "Not connected. Use the same email you signed up to Expensiz with.";
       }
       function mset() {
         const p = $("mp").value,
           e = $("me").value.trim().toLowerCase();
         if (p) {
-          D.mega = { e: e || U.email, p };
+          const tf = $("m2").checked,
+            code = tf ? otpVal($("m2box")) : "";
+          if (tf && code.length !== 6)
+            throw new Error("Enter the 6-digit MEGA code from Google Authenticator.");
+          D.mega = { e: e || U.email, p, tf };
+          M2C = code;
           ust = null;
         } else if (!D.mega) throw new Error("Enter your MEGA password.");
       }
@@ -4398,8 +4789,10 @@
         [
           $("me").parentElement,
           $("mp").parentElement,
+          $("m2").parentElement,
           $("fmega").querySelector("button[type=submit]"),
         ].forEach((x) => (x.hidden = c));
+        $("m2w").hidden = c || !$("m2").checked;
         $("mnow").hidden = !c;
         $("mdis").hidden = !c;
         $("mrest").hidden = !c;
@@ -4424,7 +4817,7 @@
         }
         if (navigator.onLine && Date.now() - mqAt > 6e4) {
           mqAt = Date.now();
-          ustore()
+          ustore(true)
             .then((st) => st.getAccountInfo())
             .then((i) => {
               LS.set("nl_mq_" + U.email, { u: i.spaceUsed, t: i.spaceTotal });
@@ -4456,11 +4849,15 @@
       };
       $("fmega").onsubmit = async (e) => {
         e.preventDefault();
-        mset();
         try {
+          mset();
           await save();
           await backup();
           $("mp").value = "";
+          $("m2").checked = false;
+          $("m2").dataset.on = "0";
+          $("m2w").hidden = true;
+          otpMake($("m2box"));
           mqAt = 0;
           bstat();
           toast("Backed up to MEGA");
@@ -4483,7 +4880,8 @@
           toast(x.message);
         }
       };
-      $("mdis").onclick = () => {
+      $("mdis").onclick = async () => {
+        if (!(await tfaStep())) return;
         D.mega = null;
         D.auto = false;
         ust = null;
@@ -4513,7 +4911,7 @@
       function pfill() {
         $("pf").value = U.first;
         $("pl").value = U.last;
-        $("pc").innerHTML = CURS.map((c) => `<option>${c}</option>`).join("");
+        $("pc").innerHTML = curOpts();
         $("pc").value = U.cur;
         $("me").value = U.email;
       }
@@ -4775,7 +5173,7 @@
         }
       };
       $("dexp").onclick = async () => {
-        if (!(await askPw())) return;
+        if (!(await askPw()) || !(await tfaStep())) return;
         logS("Backup file exported");
         const a = document.createElement("a");
         a.href = URL.createObjectURL(
@@ -4787,7 +5185,9 @@
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       };
-      $("dimp").onclick = () => $("dfile").click();
+      $("dimp").onclick = async () => {
+        if (await tfaStep()) $("dfile").click();
+      };
       $("dfile").onchange = async (e) => {
         const f = e.target.files[0];
         e.target.value = "";
@@ -4803,7 +5203,7 @@
 
       /* ---------- Danger zone ---------- */
       async function wipe() {
-        if (!(await askPw())) return;
+        if (!(await askPw()) || !(await tfaStep())) return;
         if (
           !confirm(
             "This permanently deletes all your Expensiz data from this device and from your cloud backup. Your account stays. Continue?",
@@ -4901,25 +5301,52 @@
           D.cats
             .map(
               (c, i) =>
-                `<div class="chip"><span class="row" style="flex-wrap:nowrap"><input type="color" data-cc="${i}" value="${c.c}" style="width:44px;padding:2px" aria-label="Colour"><input data-cn="${i}" value="${esc(c.n)}" maxlength="30" aria-label="Category name"></span><button class="x" data-cdel="${i}" aria-label="Delete category">×</button></div>`,
+                `<div class="chip" style="flex-wrap:wrap"><span class="row" style="flex-wrap:nowrap"><input type="color" data-cc="${i}" value="${c.c}" style="width:44px;padding:2px" aria-label="Colour"><input data-cn="${i}" value="${esc(c.n)}" maxlength="30" aria-label="Category name"></span><button class="x" data-cdel="${i}" aria-label="Delete category">×</button><input data-ck="${i}" value="${esc((c.k || []).join(", "))}" placeholder="Keywords, separated by commas" aria-label="Keywords for ${esc(c.n)}" style="flex-basis:100%"></div>`,
             )
             .join("") || '<div class="empty">No custom categories yet.</div>';
       }
+      $("cn").oninput = () => ($("ck").hidden = !$("cn").value.trim());
       $("fcat").onsubmit = (e) => {
         e.preventDefault();
-        const n = $("cn").value.trim();
+        const n = $("cn").value.trim(),
+          ws = parseKw($("ck").value);
         if (!n || dupC(n, -1))
           return toast("Pick a name that is not already used.");
-        D.cats.push({ n, c: $("ccol").value });
+        for (const w of ws) {
+          const o = kwOwner(w, -1);
+          if (o) {
+            alert(`"${w}" is already linked to the category "${o}". Remove it or choose a different keyword.`);
+            return;
+          }
+        }
+        D.cats.push({ n, c: $("ccol").value, k: ws });
         $("cn").value = "";
+        $("ck").value = "";
+        $("ck").hidden = true;
         fillCats();
         save();
         render();
         toast("Category added");
       };
       $("clist").onchange = (e) => {
-        const t = e.target,
-          i = +(t.dataset.cc ?? t.dataset.cn);
+        const t = e.target;
+        if (t.dataset.ck !== undefined) {
+          const j = +t.dataset.ck,
+            ws = parseKw(t.value);
+          for (const w of ws) {
+            const o = kwOwner(w, j);
+            if (o) {
+              alert(`"${w}" is already linked to the category "${o}".`);
+              t.value = (D.cats[j].k || []).join(", ");
+              return;
+            }
+          }
+          D.cats[j].k = ws;
+          save();
+          toast("Keywords saved");
+          return;
+        }
+        const i = +(t.dataset.cc ?? t.dataset.cn);
         if (isNaN(i)) return;
         const c = D.cats[i];
         if (t.dataset.cc !== undefined) c.c = t.value;
@@ -5041,33 +5468,74 @@
       };
 
       /* ---------- Security: 2FA, pattern lock, devices, audit log ---------- */
-      const DN = (() => {
-        const u = navigator.userAgent;
-        return (
-          (/Edg\//.test(u)
-            ? "Edge"
-            : /OPR\//.test(u)
-              ? "Opera"
-              : /Firefox\//.test(u)
-                ? "Firefox"
-                : /Chrome\//.test(u)
-                  ? "Chrome"
-                  : /Safari\//.test(u)
-                    ? "Safari"
-                    : "Browser") +
-          " on " +
-          (/Windows/.test(u)
-            ? "Windows"
-            : /Android/.test(u)
-              ? "Android"
-              : /iPhone|iPad/.test(u)
-                ? "iOS"
-                : /Mac/.test(u)
+      const UA = navigator.userAgent,
+        OSN = /Windows/.test(UA)
+          ? "Windows"
+          : /Android/.test(UA)
+            ? "Android"
+            : /iPhone|iPad/.test(UA)
+              ? "iOS"
+              : /CrOS/.test(UA)
+                ? "ChromeOS"
+                : /Mac/.test(UA)
                   ? "macOS"
-                  : /Linux/.test(u)
+                  : /Linux/.test(UA)
                     ? "Linux"
-                    : "device")
-        );
+                    : "",
+        BRN = /Edg\//.test(UA)
+          ? "Edge"
+          : /OPR\//.test(UA)
+            ? "Opera"
+            : /Firefox\//.test(UA)
+              ? "Firefox"
+              : /Chrome\//.test(UA)
+                ? "Chrome"
+                : /Safari\//.test(UA)
+                  ? "Safari"
+                  : "Browser",
+        HOSTM = UA.match(/ExpensizHost\/(\S+)/),
+        HOST = HOSTM ? decodeURIComponent(HOSTM[1]) : "",
+        HOW =
+          /Electron\//.test(UA) || HOST
+            ? "Desktop app"
+            : matchMedia("(display-mode: standalone)").matches ||
+                navigator.standalone
+              ? "Installed app"
+              : BRN + " browser";
+      let DN = HOST
+        ? HOST + " (" + (OSN || "PC") + ")"
+        : /iPhone/.test(UA)
+          ? "iPhone"
+          : /iPad/.test(UA)
+            ? "iPad"
+            : OSN === "Android"
+              ? "Android phone"
+              : OSN === "Windows"
+                ? "Windows PC"
+                : OSN === "macOS"
+                  ? "Mac"
+                  : OSN === "Linux"
+                    ? "Linux PC"
+                    : OSN === "ChromeOS"
+                      ? "Chromebook"
+                      : "Device";
+      /* Phones hide their model unless asked; this reads it (e.g. SM-A546B) */
+      const DNP = (async () => {
+        try {
+          const h =
+            navigator.userAgentData &&
+            (await navigator.userAgentData.getHighEntropyValues([
+              "model",
+              "platformVersion",
+            ]));
+          if (h && h.model)
+            DN =
+              "Android · " +
+              h.model +
+              (h.platformVersion
+                ? " (Android " + h.platformVersion.split(".")[0] + ")"
+                : "");
+        } catch (e) {}
       })();
       const WK = 7 * 864e5,
         rnd = () => Date.now() + "-" + Math.random().toString(36).slice(2, 6);
@@ -5152,6 +5620,33 @@
         }
         return false;
       }
+      function tfaAsk() {
+        return new Promise((res) => {
+          const d = $("tfd");
+          $("tfdi").value = "";
+          $("tfde").textContent = "";
+          d.showModal();
+          $("tfdi").focus();
+          $("ftfd").onsubmit = async (e) => {
+            e.preventDefault();
+            if (await tfaCheck($("tfdi").value)) {
+              d.close();
+              save();
+              res(true);
+            } else {
+              $("tfde").textContent = "That code is not correct.";
+              logS("Two-factor code rejected", 1);
+            }
+          };
+          $("tfdc").onclick = () => {
+            d.close();
+            res(false);
+          };
+          d.oncancel = () => res(false);
+        });
+      }
+      const tfaStep = async () =>
+        !(D && D.sec && D.sec.tfa && D.sec.tfa.on) || tfaAsk();
       const newRC = () =>
         Array.from({ length: 8 }, () => {
           const c = b32(crypto.getRandomValues(new Uint8Array(5)));
@@ -5474,7 +5969,7 @@
           n = Date.now();
         let d = s.devs.find((x) => x.id === DEV.id);
         if (!d) s.devs.push((d = { id: DEV.id, first: n }));
-        Object.assign(d, { name: DN, last: n, at: n, on, rm: 0 });
+        Object.assign(d, { name: DN, how: HOW, last: n, at: n, on, rm: 0 });
       }
       function mergeSec(a, b) {
         a = a || {};
@@ -5510,7 +6005,9 @@
           LS.set("nl_flog_" + em, null);
         }
         pruneLog();
-        if (!key && D.sec.tfa && D.sec.tfa.on) await tfaGate();
+        await DNP;
+        const known = D.sec.devs.some((x) => x.id === DEV.id && !x.rm);
+        if (!key && D.sec.tfa && D.sec.tfa.on && !known) await tfaGate();
         localStorage.removeItem("nl_bio_" + em);
         if (LS.get("nl_pat_" + em, null)) await patGate();
         devUp(true);
@@ -5541,7 +6038,7 @@
           .sort((a, b) => b.last - a.last)
           .map(
             (d) =>
-              `<div class="item"><strong>${esc(d.name)}${d.id === DEV.id ? " (this device)" : ""}</strong><span class="lbl">${d.on ? "Signed in" : "Signed out"}</span>${d.on && d.id !== DEV.id ? `<button class="ghost" data-dso="${d.id}">Sign out</button>` : "<span></span>"}<small>First seen ${new Date(d.first).toLocaleDateString()} · last active ${new Date(d.last).toLocaleString()}</small></div>`,
+              `<div class="item"><strong>${esc(d.name)}${d.id === DEV.id ? " (this device)" : ""}</strong><span class="lbl">${d.on ? "Signed in" : "Signed out"}</span>${d.on && d.id !== DEV.id ? `<button class="ghost" data-dso="${d.id}">Sign out</button>` : "<span></span>"}<small>${d.how ? esc(d.how) + " · " : ""}First seen ${new Date(d.first).toLocaleDateString()} · last active ${new Date(d.last).toLocaleString()}</small></div>`,
           )
           .join("");
         $("seclog").innerHTML =
@@ -5628,7 +6125,7 @@
             toast("Pattern lock is on for this device");
           }
         } else if (a === "pchg") {
-          if ((await askPw()) && (await patSetup())) {
+          if ((await askPw()) && (await tfaStep()) && (await patSetup())) {
             await logS("Pattern changed", 1);
             toast("Pattern changed");
           }
