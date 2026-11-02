@@ -991,6 +991,32 @@
       .fl.z {
         fill: #a3a3ad;
       }
+      .fl.g {
+        fill: #ff8f1f;
+        transform-box: fill-box;
+        transform-origin: center;
+        filter: drop-shadow(0 0 5px rgba(255, 143, 31, 0.85))
+          drop-shadow(0 0 13px rgba(255, 170, 60, 0.5));
+        animation: flick 1.8s ease-in-out infinite;
+      }
+      @keyframes flick {
+        0%,
+        100% {
+          transform: scale(1);
+          filter: drop-shadow(0 0 5px rgba(255, 143, 31, 0.8))
+            drop-shadow(0 0 12px rgba(255, 170, 60, 0.45));
+        }
+        50% {
+          transform: scale(1.06);
+          filter: drop-shadow(0 0 9px rgba(255, 143, 31, 1))
+            drop-shadow(0 0 22px rgba(255, 170, 60, 0.75));
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .fl.g {
+          animation: none;
+        }
+      }
       :root[data-theme="dark"] .fl.z {
         fill: #5d5d68;
       }
@@ -1739,6 +1765,11 @@
               <label class="chk"
                 ><input id="ntg" type="checkbox" /> Budget alerts at 80% and
                 100% used</label
+              >
+              <label class="chk"
+                ><input id="nta" type="checkbox" /> Achievements and activity:
+                goal reached, budget set, new badge, report, cloud backup,
+                two-factor and pattern lock</label
               >
               <label class="chk"
                 ><input id="ntd" type="checkbox" /> Daily reminder to log your
@@ -3233,6 +3264,7 @@
       let KEY = null,
         ust = null,
         pend = false,
+        bkErr = "",
         btm;
       const blank = () => ({
         exp: [],
@@ -3361,6 +3393,7 @@
         pfill();
         convert();
         save();
+        setTimeout(resumeAuto, 4000);
         if (!e && !old && !fresh) {
           go("settings");
           toast("New device? Connect MEGA and restore your backup.");
@@ -3385,22 +3418,25 @@
       function bStreak() {
         const a = D.bud.a;
         if (!(a > 0)) return { n: 0, days: [] };
-        const sp = {};
-        D.exp.forEach((e) => (sp[e.date] = (sp[e.date] || 0) + e.amt));
         const t = today(),
-          s = U.created,
-          days = [];
+          p = D.bud.p,
+          from = [U.created, D.bud.since].filter(Boolean).sort().pop() || t,
+          sp = {};
+        D.exp.forEach((e) => (sp[e.date] = (sp[e.date] || 0) + e.amt));
+        const ps = (d) =>
+            p === "day" ? d : p === "week" ? wkStart(d) : d.slice(0, 8) + "01",
+          cum = (d) => {
+            let x = 0;
+            for (let k = ps(d); k <= d; k = addDays(k, 1)) x += sp[k] || 0;
+            return x;
+          };
         let n = 0;
-        for (let i = 13; i >= 0; i--) {
+        for (let i = 0; i < 3650; i++) {
           const d = addDays(t, -i);
-          days.push(d < s ? "p" : (sp[d] || 0) <= lim(d) ? "" : "m");
-        }
-        for (let i = 0; ; i++) {
-          const d = addDays(t, -i);
-          if (d < s || (sp[d] || 0) > lim(d)) break;
+          if (d < from || cum(d) > a) break;
           n++;
         }
-        return { n, days };
+        return { n, days: [] };
       }
       function sStreak() {
         const w = new Set(D.con.map((c) => c.date));
@@ -3775,32 +3811,50 @@
         D.bestSD = Math.max(D.bestSD || 0, s);
         if (ob !== D.bestB + "," + D.bestSD) save();
         $("tally1").innerHTML =
-          flame(b.n ? "" : "z", 36) +
+          flame(b.n ? "g" : "z", 36) +
           `<span>${b.n} ${b.n === 1 ? "day" : "days"}</span>`;
         $("ssum").textContent =
           D.bud.a > 0
             ? `${b.n}-day budget streak · ${s}-day saving streak`
             : "Set a budget to start a streak.";
         $("bn").innerHTML =
-          flame(b.n ? "" : "z", 44) +
+          flame(b.n ? "g" : "z", 44) +
           `<span>${b.n} ${b.n === 1 ? "day" : "days"}</span>`;
         $("sn").innerHTML =
-          flame(s ? "" : "z", 44) +
+          flame(s ? "g" : "z", 44) +
           `<span>${s} ${s === 1 ? "day" : "days"}</span>`;
         $("bnote").textContent =
           D.bud.a > 0
-            ? `Best: ${D.bestB}. Each day you spend within your daily share adds a day to your streak.`
+            ? `Best: ${D.bestB}. Each day you stay within your ${({ day: "daily", week: "weekly", month: "monthly" })[D.bud.p]} budget adds a day. Going over resets it.`
             : "Set a budget in Plan to start.";
         $("snote").textContent =
           `Best: ${D.bestSD || 0}. Add to a savings goal at least once a day.`;
         let n = 0;
+        const EARN = [];
         $("badges").innerHTML = BADGES.map(([ic, nm, ds, fn, t]) => {
           const v = fn(),
             on = v >= t;
-          if (on) n++;
+          if (on) {
+            n++;
+            EARN.push(nm + "|" + ds);
+          }
           return `<div class="badge${on ? " on" : ""}"><span class="bi">${ic}</span><b>${nm}</b><small>${ds}</small>${on ? "<em>Earned</em>" : `<div class="bar"><i style="width:${Math.min(100, (v / t) * 100)}%"></i></div><small>${Math.min(v, t)} of ${t}</small>`}</div>`;
         }).join("");
         $("bh").textContent = `Badges (${n} of ${BADGES.length})`;
+        if (!D.badgesSeen) {
+          D.badgesSeen = EARN;
+          save();
+        } else {
+          const fresh = EARN.filter((x) => !D.badgesSeen.includes(x));
+          if (fresh.length) {
+            D.badgesSeen = D.badgesSeen.concat(fresh);
+            save();
+            fresh.forEach((x) => {
+              toast("Badge earned: " + x.split("|")[0]);
+              evt("New badge earned 🏅", x.split("|")[0] + " · " + x.split("|")[1], "badge-" + x);
+            });
+          }
+        }
       }
       /* ---------- Navigation ---------- */
       const T = {
@@ -3906,13 +3960,22 @@
       };
       $("fbud").onsubmit = (e) => {
         e.preventDefault();
+        const ob = D.bud,
+          na = Math.max(0, parseFloat($("ba").value) || 0);
         D.bud = {
           p: $("bp").value,
-          a: Math.max(0, parseFloat($("ba").value) || 0),
+          a: na,
+          since: ob.a > 0 && ob.since ? ob.since : today(),
         };
         save();
         render();
         toast("Budget saved");
+        if (na > 0)
+          evt(
+            "Budget set",
+            fmt(na) + " per " + $("bp").value + ". Stay within it to build your streak.",
+            "budget-set",
+          );
       };
       $("fgoal").onsubmit = (e) => {
         e.preventDefault();
@@ -4386,7 +4449,7 @@
         "Notification" in window && Notification.permission === "granted";
       const ntCfg = () =>
         Object.assign(
-          { bills: true, budget: true, daily: true, time: "20:00" },
+          { bills: true, budget: true, daily: true, events: true, time: "20:00" },
           (D && D.nt) || {},
         );
       async function notify(title, body, tag) {
@@ -4416,7 +4479,37 @@
             });
         } catch (e) {}
       }
+      const evt = (t, b, tag) => (ntCfg().events ? notify(t, b, tag) : false);
+      const PN = { day: "daily", week: "weekly", month: "monthly" };
+      function prevPeriod() {
+        const t = today(),
+          p = D.bud.p;
+        if (p === "day") {
+          const d = addDays(t, -1);
+          return { a: d, b: d, key: "d" + d, l: "yesterday" };
+        }
+        if (p === "week") {
+          const w = addDays(wkStart(t), -7);
+          return { a: w, b: addDays(w, 6), key: "w" + w, l: "last week" };
+        }
+        const e = addDays(t.slice(0, 8) + "01", -1);
+        return {
+          a: e.slice(0, 8) + "01",
+          b: e,
+          key: "m" + e.slice(0, 7),
+          l: "last month",
+        };
+      }
       async function ntCheck() {
+        if (ntCheck.busy) return;
+        ntCheck.busy = 1;
+        try {
+          await ntCheck0();
+        } finally {
+          ntCheck.busy = 0;
+        }
+      }
+      async function ntCheck0() {
         if (!D || !U || !ntOn()) return;
         const c = ntCfg(),
           k = "nl_ns_" + U.email,
@@ -4461,15 +4554,35 @@
             );
           }
         }
-        if (c.daily && hm >= c.time && st.daily !== t) {
-          st.daily = t;
-          ch = true;
-          if (!logged)
-            notify(
+        if (c.budget && D.bud.a > 0) {
+          const pr = prevPeriod();
+          if (st.pdone !== pr.key) {
+            st.pdone = pr.key;
+            ch = true;
+            const sp = tot(D.exp.filter((e) => e.date >= pr.a && e.date <= pr.b));
+            if ((D.bud.since || U.created || "") <= pr.a && sp <= D.bud.a)
+              notify(
+                "You stayed within your budget",
+                "You spent " + fmt(sp) + " of " + fmt(D.bud.a) + " " + pr.l + ". Keep it up.",
+                "within-" + pr.key,
+              );
+          }
+        }
+        const dk = t + "@" + c.time;
+        if (c.daily && hm >= c.time && st.dk !== dk) {
+          if (logged) {
+            st.dk = dk;
+            ch = true;
+          } else if (
+            await notify(
               "Log today's spending",
               "You have not added an expense today. Take a minute to record what you spent.",
               "daily",
-            );
+            )
+          ) {
+            st.dk = dk;
+            ch = true;
+          }
         }
         if (ch) LS.set(k, st);
         try {
@@ -4481,7 +4594,7 @@
                 on: !!c.daily,
                 time: c.time,
                 logged: logged ? t : "",
-                notified: st.daily || "",
+                notified: st.dk && st.dk.startsWith(t) ? t : "",
               }),
             ),
           );
@@ -4502,6 +4615,7 @@
           $("ntb").checked = c.bills;
           $("ntg").checked = c.budget;
           $("ntd").checked = c.daily;
+          $("nta").checked = c.events;
           $("ntt").value = c.time;
         }
       }
@@ -4519,13 +4633,14 @@
         if (!(await notify("Expensiz", "This is a test notification.", "test")))
           toast("The device did not show the notification.");
       };
-      ["ntb", "ntg", "ntd", "ntt"].forEach(
+      ["ntb", "ntg", "ntd", "nta", "ntt"].forEach(
         (i) =>
           ($(i).onchange = () => {
             D.nt = {
               bills: $("ntb").checked,
               budget: $("ntg").checked,
               daily: $("ntd").checked,
+              events: $("nta").checked,
               time: $("ntt").value || "20:00",
             };
             save();
@@ -4695,8 +4810,12 @@
         const s = await ustore(quiet),
           f = bfile(s),
           body = JSON.stringify(await seal(D));
-        if (f) await f.delete(true);
         await s.upload(bname(), body).complete;
+        if (f) {
+          try {
+            await f.delete(true);
+          } catch (e) {}
+        }
         LS.set("nl_lb_" + U.email, Date.now());
       }
       function sync() {
@@ -4710,8 +4829,10 @@
           try {
             await backup(true);
             pend = false;
+            bkErr = "";
           } catch (e) {
             pend = true;
+            bkErr = /code needed/i.test(e.message) ? "" : e.message;
           }
           bstat();
         }, 3000);
@@ -4759,7 +4880,7 @@
         $("mautoW").hidden = !D.mega;
         $("mauto").checked = !!D.auto;
         $("bst").textContent = D.mega
-          ? `Connected to ${D.mega.e || U.email}. Auto backup is ${D.auto ? "on" : "off"}. Last backup: ${lb ? new Date(lb).toLocaleString() : "not yet"}${pend ? (D.mega.tf && !ust ? ". Press Back up now to enter your MEGA code." : ". Waiting for internet to back up.") : "."}`
+          ? `Connected to ${D.mega.e || U.email}. Auto backup is ${D.auto ? "on" : "off"}. Last backup: ${lb ? new Date(lb).toLocaleString() : "not yet"}${pend ? (D.mega.tf && !ust ? ". Press Back up now to enter your MEGA code." : bkErr ? ". The last automatic backup failed (" + bkErr + "). Trying again soon." : ". Waiting for internet to back up.") : "."}`
           : "Not connected. Use the same email you signed up to Expensiz with.";
       }
       function mset() {
@@ -4861,6 +4982,11 @@
           mqAt = 0;
           bstat();
           toast("Backed up to MEGA");
+          evt(
+            "Cloud backup connected",
+            "Your data is now backed up to your MEGA account.",
+            "mega",
+          );
         } catch (x) {
           D.mega = null;
           ust = null;
@@ -4895,6 +5021,41 @@
           convert();
         }
       });
+      /* Auto backup: retry every minute after a failure, and ask once per session for the MEGA code when two-factor is on */
+      setInterval(() => {
+        if (
+          D &&
+          D.mega &&
+          D.auto &&
+          pend &&
+          navigator.onLine &&
+          !(D.mega.tf && !ust)
+        )
+          sync();
+      }, 60000);
+      async function resumeAuto() {
+        if (
+          !D ||
+          !D.mega ||
+          !D.auto ||
+          !D.mega.tf ||
+          ust ||
+          !navigator.onLine ||
+          resumeAuto.t
+        )
+          return;
+        resumeAuto.t = 1;
+        try {
+          await backup();
+          pend = false;
+          bkErr = "";
+          mqAt = 0;
+          bstat();
+          toast("Backed up to MEGA");
+        } catch (x) {
+          toast(x.message);
+        }
+      }
       setInterval(
         () => {
           if (D) remind();
@@ -5068,6 +5229,11 @@
           `You reached your goal: ${g.name}. ${fmt(g.target)} saved. The goal has been cleared from your list.`;
         confetti();
         $("cong").showModal();
+        evt(
+          "Savings goal reached 🎉",
+          "You saved " + fmt(g.target) + " for " + g.name + ".",
+          "goal-" + g.id,
+        );
       }
       $("congOk").onclick = () => $("cong").close();
 
@@ -5465,6 +5631,16 @@
         document.title = "Expensiz report " + $("rm").value;
         print();
         document.title = t;
+        evt(
+          "Report generated",
+          "Your report for " +
+            new Date($("rm").value + "-01").toLocaleDateString("en", {
+              month: "long",
+              year: "numeric",
+            }) +
+            " is ready.",
+          "report",
+        );
       };
 
       /* ---------- Security: 2FA, pattern lock, devices, audit log ---------- */
@@ -5962,8 +6138,25 @@
         });
         pruneLog();
         renderSec();
+        if (SECNT[m]) evt(SECNT[m][0], SECNT[m][1], "sec-" + m);
         return save();
       }
+      const SECNT = {
+        "Two-factor authentication turned on": [
+          "Two-factor authentication is on",
+          "Expensiz will ask for a code on new devices and for sensitive actions.",
+        ],
+        "Two-factor authentication turned off": [
+          "Two-factor authentication is off",
+          "Your account no longer asks for a code.",
+        ],
+        "Pattern lock turned on": [
+          "Pattern lock is on",
+          "This device now asks for your number pattern to open Expensiz.",
+        ],
+        "Pattern changed": ["Pattern changed", "Your pattern lock has a new pattern."],
+        "Pattern lock turned off": ["Pattern lock is off", "This device no longer asks for a pattern."],
+      };
       function devUp(on) {
         const s = D.sec,
           n = Date.now();
