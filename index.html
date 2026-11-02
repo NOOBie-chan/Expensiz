@@ -474,6 +474,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
         gap: 12px;
+        margin-bottom: 20px;
       }
       .tile {
         background: var(--pane);
@@ -992,24 +993,34 @@
         fill: #a3a3ad;
       }
       .fl.g {
-        fill: #ff8f1f;
+        fill: var(--acc);
         transform-box: fill-box;
         transform-origin: center;
-        filter: drop-shadow(0 0 5px rgba(255, 143, 31, 0.85))
-          drop-shadow(0 0 13px rgba(255, 170, 60, 0.5));
+        filter: drop-shadow(
+            0 0 5px color-mix(in srgb, var(--acc) 85%, transparent)
+          )
+          drop-shadow(0 0 13px color-mix(in srgb, var(--acc) 50%, transparent));
         animation: flick 1.8s ease-in-out infinite;
       }
       @keyframes flick {
         0%,
         100% {
           transform: scale(1);
-          filter: drop-shadow(0 0 5px rgba(255, 143, 31, 0.8))
-            drop-shadow(0 0 12px rgba(255, 170, 60, 0.45));
+          filter: drop-shadow(
+              0 0 5px color-mix(in srgb, var(--acc) 80%, transparent)
+            )
+            drop-shadow(
+              0 0 12px color-mix(in srgb, var(--acc) 45%, transparent)
+            );
         }
         50% {
           transform: scale(1.06);
-          filter: drop-shadow(0 0 9px rgba(255, 143, 31, 1))
-            drop-shadow(0 0 22px rgba(255, 170, 60, 0.75));
+          filter: drop-shadow(
+              0 0 9px color-mix(in srgb, var(--acc) 100%, transparent)
+            )
+            drop-shadow(
+              0 0 22px color-mix(in srgb, var(--acc) 75%, transparent)
+            );
         }
       }
       @media (prefers-reduced-motion: reduce) {
@@ -1081,6 +1092,56 @@
           border: 1px solid #ddd;
           break-inside: avoid;
         }
+      }
+      .cal {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+      }
+      .cal > b {
+        text-align: center;
+        font-size: 12px;
+        color: var(--mute);
+      }
+      .cd {
+        min-height: 62px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 4px;
+        font-size: 11px;
+        cursor: pointer;
+        background: var(--pane);
+        text-align: left;
+        color: var(--ink);
+        font-weight: 500;
+        display: block;
+        line-height: 1.3;
+      }
+      .cd.t {
+        border-color: var(--acc);
+      }
+      .cd.s {
+        outline: 2px solid var(--acc);
+      }
+      .pd {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-right: 3px;
+      }
+      .dd {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-top: 8px;
+      }
+      .dd summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .dd .chk {
+        margin-top: 8px;
       }
     </style>
   </head>
@@ -1203,6 +1264,7 @@
         ><button data-v="import"><span class="ic">⇪</span>Import</button
         ><button data-v="convert"><span class="ic">¤</span>Convert</button
         ><button data-v="recurring"><span class="ic">↻</span>Recurring</button
+        ><button data-v="calendar"><span class="ic">▦</span>Calendar</button
         ><button data-v="reports"><span class="ic">▤</span>Reports</button
         ><button data-v="security"><span class="ic">⛨</span>Security</button
         ><button data-v="streaks"><span class="ic">✦</span>Streaks</button
@@ -1271,6 +1333,7 @@
               <span class="ic">✦</span>Streaks
             </button>
           </div>
+          <div class="card" id="hscore" style="margin-bottom: 14px"></div>
           <div class="stath">
             <h2>Statistics</h2>
             <div class="pills">
@@ -1357,7 +1420,8 @@
                     inputmode="decimal"
                     required
                 /></label>
-                <label>Date<input id="date" type="date" required /></label>
+                <label>Date<input id="date" type="date" required /></label
+                ><label class="full">Currency<select id="xcur"></select></label>
                 <label class="full"
                   >What was it for?<input
                     id="desc"
@@ -1440,9 +1504,10 @@
             </div>
             <p class="err" id="ierr" role="alert"></p>
             <p class="lbl">
-              Money going out becomes expenses. Dates are read as
-              day/month/year. Money coming in is summarised but not imported.
-              Excel and PDF readers load from the internet the first time.
+              Money going out becomes expenses. Day/month or month/day order is
+              detected from the file. Currency is detected from codes and
+              symbols. Money coming in is summarised but not imported. Excel and
+              PDF readers load from the internet the first time.
             </p>
           </div>
           <div id="ires" style="margin-top: 14px"></div>
@@ -1473,11 +1538,6 @@
                   <button type="submit">Save budget</button>
                 </div>
               </form>
-              <p class="lbl">
-                You get a warning at 80% and an alert when you go over. Weekly
-                and monthly budgets are split evenly across days for your
-                streak.
-              </p>
             </div>
             <div class="card">
               <h2>Things I am saving for</h2>
@@ -1541,15 +1601,10 @@
                   <button type="submit">Add recurring expense</button>
                 </div>
               </form>
-              <p class="lbl">
-                Each bill is logged automatically on its day, even when you are
-                offline. Pick any day from 1 to 31. In shorter months a bill set
-                for a day that does not exist is due on the last day of the
-                month.
-              </p>
             </div>
             <div class="card">
               <h2>Your recurring bills</h2>
+              <div id="rsug"></div>
               <div id="rlist"></div>
             </div>
           </div>
@@ -1576,12 +1631,9 @@
             <h2>Currency converter</h2>
             <div class="fg">
               <label class="full"
-                >Amount<input
-                  id="cvA"
-                  type="number"
-                  step="any"
-                  value="1" /></label
-              ><div class="full cvrow">
+                >Amount<input id="cvA" type="number" step="any" value="1"
+              /></label>
+              <div class="full cvrow">
                 <label>From<select id="cvF"></select></label
                 ><button
                   type="button"
@@ -1603,13 +1655,36 @@
           </div>
         </section>
 
+        <section id="v-calendar" hidden>
+          <div class="grid two">
+            <div class="card">
+              <div id="calbox"></div>
+              <p class="lbl">
+                <span class="pd" style="background: var(--gold)"></span>bill due
+                <span class="pd" style="background: var(--bad)"></span>payments
+                made <span class="pd" style="background: #2e8b57"></span>income
+              </p>
+            </div>
+            <div>
+              <div class="card" style="margin-bottom: 14px">
+                <h2 id="calday">Selected day</h2>
+                <div id="calsel"></div>
+              </div>
+              <div class="card">
+                <h2>Next 30 days</h2>
+                <div id="calup"></div>
+              </div>
+            </div>
+          </div>
+        </section>
         <section id="v-reports" hidden>
           <div
             class="row noprint"
             style="margin-bottom: 14px; align-items: end"
           >
             <label>Month<input type="month" id="rm" /></label
-            ><button id="rpdf">Export PDF</button>
+            ><button id="rpdf">Export PDF</button
+            ><button class="ghost" id="rxls">Export Excel</button>
           </div>
           <div id="rep"></div>
           <div class="grid two noprint" style="margin-top: 14px">
@@ -1655,9 +1730,7 @@
             <div class="card">
               <h2>Devices</h2>
               <p class="lbl">
-                Devices signed in to this account. The list lives in your
-                encrypted data, so other devices see changes after they restore
-                or sync a backup.
+                Devices signed in to this account. 
               </p>
               <div id="secdev"></div>
             </div>
@@ -1679,7 +1752,10 @@
                 <form id="fpro" class="fg">
                   <label>First name<input id="pf" required /></label
                   ><label>Last name<input id="pl" required /></label>
-                  <label class="full">Currency<select id="pc"></select></label>
+                  <label class="full">Currency<select id="pc"></select></label
+                  ><label class="full"
+                    >Time zone<select id="ptz"></select
+                  ></label>
                   <div class="full">
                     <button type="submit">Save profile</button>
                   </div>
@@ -1718,6 +1794,11 @@
                     style="flex-basis: 100%"
                   /><button type="submit">Add</button>
                 </form>
+                <div class="row" style="margin: 8px 0">
+                  <button class="ghost" id="rcat">
+                    Re-categorise “Other” expenses
+                  </button>
+                </div>
                 <div id="clist"></div>
               </div>
             </div>
@@ -1740,9 +1821,11 @@
               <div class="danger">
                 <h3>Danger zone</h3>
                 <p class="lbl">
-                  Deletes all your Expensiz data from this device, your device
-                  folder and your cloud backup. Your account stays so you can
-                  start fresh. This cannot be undone.
+                  Deletes everything: your data, security settings (two-factor,
+                  pattern lock, fingerprint / Face ID, devices and audit log),
+                  notification settings and backups, from this device, your
+                  device folder and your cloud backup. Your account stays so you
+                  can start fresh. This cannot be undone.
                 </p>
                 <button class="dng" id="wipe">Delete all data</button>
               </div>
@@ -1758,27 +1841,46 @@
                 ><button class="ghost" id="remt">Send a test</button>
               </div>
               <p class="lbl" id="remst"></p>
-              <label class="chk"
-                ><input id="ntb" type="checkbox" /> Bills due in the next 3
-                days</label
-              >
-              <label class="chk"
-                ><input id="ntg" type="checkbox" /> Budget alerts at 80% and
-                100% used</label
-              >
-              <label class="chk"
-                ><input id="nta" type="checkbox" /> Achievements and activity:
-                goal reached, budget set, new badge, report, cloud backup,
-                two-factor and pattern lock</label
-              >
-              <label class="chk"
-                ><input id="ntd" type="checkbox" /> Daily reminder to log your
-                spending at
-                <input
-                  id="ntt"
-                  type="time"
-                  style="width: auto; margin-left: 6px"
-              /></label>
+              <details class="dd">
+                <summary>Choose what to be notified about</summary>
+                <label class="chk"
+                  ><input id="nts" type="checkbox" /> Security alerts: new
+                  device sign-ins (with device and location), 5 failed sign-ins,
+                  and any change to two-factor, pattern lock or fingerprint /
+                  Face ID</label
+                ><label class="chk"
+                  ><input id="ntb" type="checkbox" /> Bills due in the next 3
+                  days</label
+                >
+                <label class="chk"
+                  ><input id="ntg" type="checkbox" /> Budget alerts at 80% and
+                  100% used</label
+                >
+                <label class="chk"
+                  ><input id="nta" type="checkbox" /> Achievements and activity:
+                  goal reached, budget set, new badge, report and cloud
+                  backup</label
+                >
+                <label class="chk"
+                  ><input id="ntd" type="checkbox" /> Daily reminder to log your
+                  spending at
+                  <input
+                    id="ntt"
+                    type="time"
+                    style="width: auto; margin-left: 6px"
+                /></label>
+              </details>
+            </div>
+            <div class="card">
+              <h2>Automatic backups</h2>
+              <p class="lbl">
+                Encrypted snapshots are saved on this device automatically as
+                you work. If your data is ever lost or damaged, Expensiz
+                recovers the latest one at sign-in. You can also restore an
+                older snapshot here.
+              </p>
+              <div class="row"><button id="snow">Back up now</button></div>
+              <div id="snlist" style="margin-top: 8px"></div>
             </div>
             <div class="card">
               <h2>Cloud backup (MEGA)</h2>
@@ -1800,7 +1902,8 @@
                 /></label>
                 <label class="full chk"
                   ><input type="radio" id="m2" name="m2" value="1" /> Two-Factor
-                  Authentication (my MEGA account uses Google Authenticator)</label
+                  Authentication (my MEGA account uses Google
+                  Authenticator)</label
                 >
                 <div class="full" id="m2w" hidden>
                   <span class="lbl"
@@ -1849,6 +1952,8 @@
         <div id="lkpad" class="patbox"></div>
         <div class="row">
           <button id="lku">Unlock</button
+          ><button class="ghost" id="lkb" hidden>
+            Use fingerprint / Face ID</button
           ><button class="ghost" id="lkc">Clear</button
           ><button class="ghost" id="lkx" hidden>Cancel</button
           ><button class="ghost" id="lkr">Remove lock</button
@@ -1984,14 +2089,63 @@
         String(d.getMonth() + 1).padStart(2, "0") +
         "-" +
         String(d.getDate()).padStart(2, "0");
-      const today = () => iso(new Date());
+      const DTZ = (() => {
+        try {
+          return Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch (e) {
+          return "UTC";
+        }
+      })();
+      const TZ = () => {
+        try {
+          return D && D.tz && D.tz !== "auto" ? D.tz : DTZ;
+        } catch (e) {
+          return DTZ;
+        }
+      };
+      const LOC = () => {
+        try {
+          return (D && D.loc) || navigator.language || "en";
+        } catch (e) {
+          return "en";
+        }
+      };
+      const nowD = () => {
+        try {
+          const p = {};
+          new Intl.DateTimeFormat("en-GB", {
+            timeZone: TZ(),
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23",
+          })
+            .formatToParts(new Date())
+            .forEach((x) => (p[x.type] = x.value));
+          return new Date(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+        } catch (e) {
+          return new Date();
+        }
+      };
+      const today = () => iso(nowD());
+      const FW = (() => {
+        try {
+          const l = new Intl.Locale(navigator.language),
+            w = l.weekInfo || (l.getWeekInfo && l.getWeekInfo());
+          return w ? w.firstDay % 7 : 1;
+        } catch (e) {
+          return 1;
+        }
+      })();
       const addDays = (s, k) => {
         const d = new Date(s + "T00:00:00");
         d.setDate(d.getDate() + k);
         return iso(d);
       };
       const wkStart = (s) =>
-        addDays(s, -((new Date(s + "T00:00:00").getDay() + 6) % 7));
+        addDays(s, -((new Date(s + "T00:00:00").getDay() - FW + 7) % 7));
       const dim = (s) => new Date(+s.slice(0, 4), +s.slice(5, 7), 0).getDate();
       const tot = (a) => a.reduce((s, e) => s + e.amt, 0);
       const DEF = [
@@ -2019,6 +2173,7 @@
         ["Loans & Debt", "#b03a48"],
         ["Savings & Investments", "#2e8b57"],
         ["Business", "#4c6ef5"],
+        ["Transfer to Self", "#8d99ae"],
         ["Other", "#7f8a85"],
       ];
       const KW = {
@@ -2902,6 +3057,170 @@
         ],
       };
       const esc2 = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const EXTRA = {
+        "Groceries & Food": [
+          "supermarket",
+          "grocery",
+          "groceries",
+          "walmart",
+          "tesco",
+          "aldi",
+          "lidl",
+          "costco",
+          "carrefour",
+          "shoprite",
+          "spar",
+          "woolworths",
+          "kroger",
+          "sainsbury",
+          "asda",
+          "waitrose",
+          "whole foods",
+          "foodstuff",
+          "food stuff",
+          "bakery",
+          "butcher",
+          "provisions",
+          "justrite",
+          "ebeano",
+          "pick n pay",
+          "checkers",
+          "naivas",
+          "quickmart",
+          "market",
+        ],
+        "Dining Out": [
+          "restaurant",
+          "cafe",
+          "coffee",
+          "starbucks",
+          "mcdonald",
+          "kfc",
+          "burger",
+          "pizza",
+          "domino",
+          "subway",
+          "dunkin",
+          "chicken republic",
+          "mr biggs",
+          "sweet sensation",
+          "kilimanjaro",
+          "bistro",
+          "takeaway",
+          "uber eats",
+          "ubereats",
+          "doordash",
+          "glovo",
+          "chowdeck",
+          "deliveroo",
+          "just eat",
+          "grubhub",
+          "food delivery",
+          "eatery",
+          "canteen",
+          "buka",
+          "suya",
+          "lounge",
+        ],
+        Shopping: [
+          "amazon",
+          "aliexpress",
+          "jumia",
+          "konga",
+          "ebay",
+          "temu",
+          "shein",
+          "etsy",
+          "ikea",
+          "best buy",
+          "argos",
+          "retail",
+        ],
+        Clothing: [
+          "zara",
+          "h&m",
+          "nike",
+          "adidas",
+          "primark",
+          "uniqlo",
+          "fashion",
+          "boutique",
+          "tailor",
+          "shoes",
+          "footwear",
+          "apparel",
+        ],
+        Entertainment: [
+          "cinema",
+          "movie",
+          "imax",
+          "concert",
+          "festival",
+          "playstation",
+          "xbox",
+          "steam",
+          "nintendo",
+          "gaming",
+          "betting",
+          "bet9ja",
+          "sportybet",
+          "1xbet",
+          "nairabet",
+          "casino",
+          "lottery",
+        ],
+        Utilities: [
+          "council tax",
+          "british gas",
+          "edf",
+          "eskom",
+          "kplc",
+          "utility bill",
+          "sewer",
+        ],
+        Transport: [
+          "tube",
+          "oyster",
+          "petrol station",
+          "moove",
+          "careem",
+          "yango",
+          "e-hailing",
+        ],
+        "Fees & Charges": [
+          "fx fee",
+          "foreign transaction",
+          "annual fee",
+          "overdraft fee",
+          "bank fee",
+        ],
+        Health: ["pharma", "nhs", "walgreens", "cvs", "boots"],
+        Education: ["skillshare", "tuition"],
+        Business: [
+          "invoice",
+          "supplier",
+          "payroll",
+          "wages",
+          "freelance",
+          "contractor",
+          "stripe",
+          "paystack",
+          "flutterwave",
+          "shopify",
+          "godaddy",
+          "namecheap",
+          "hosting",
+          "domain",
+          "aws",
+          "azure",
+          "google ads",
+          "facebook ads",
+          "meta ads",
+        ],
+      };
+      Object.entries(EXTRA).forEach(
+        ([c, w]) => (KW[c] = [...new Set((KW[c] || []).concat(w))]),
+      );
       const KWR = Object.entries(KW).map(([c, w]) => [
         c,
         new RegExp(
@@ -2928,21 +3247,81 @@
         ((D && D.cats) || [])
           .filter((c) => c.k && c.k.length)
           .map((c) => [c.n, kwRe(c.k)]);
-      const guess = (d) => {
-        for (const [c, r] of customKW()) if (r.test(d)) return c;
-        if (MBGB.test(d)) return "Internet & Airtime";
-        for (const [c, r] of KWR) if (r.test(d)) return c;
-        return null;
+      const normD = (d) =>
+        String(d)
+          .toLowerCase()
+          .replace(
+            /\b(pos|web|trf|nip|ach|pmt|payment|purchase|card|debit|txn|ref|to|from|via|ng|ngn|usd|gbp|eur|transfer)\b/g,
+            " ",
+          )
+          .replace(/[^a-z ]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      /* learns from the categories you already chose: same payee (or very similar wording) gets the same category */
+      function hist(d) {
+        const k = normD(d);
+        if (k.length < 3 || !D) return null;
+        const A = new Set(k.split(" ")),
+          v = {},
+          N = D.exp.length;
+        D.exp.forEach((e, i) => {
+          if (!e.cat || e.cat === "Other") return;
+          const n = normD(e.desc);
+          if (n === k) v[e.cat] = (v[e.cat] || 0) + 1 + i / N;
+          else if (A.size > 1) {
+            const B = n.split(" ");
+            if (
+              B.filter((x) => A.has(x)).length / Math.max(A.size, B.length) >=
+              0.75
+            )
+              v[e.cat] = (v[e.cat] || 0) + 0.5;
+          }
+        });
+        const b = Object.entries(v).sort((x, y) => y[1] - x[1])[0];
+        return b ? b[0] : null;
+      }
+      const selfName = (d) => {
+        if (!U) return false;
+        const w = (x) =>
+            normD(x)
+              .split(" ")
+              .filter((t) => t.length > 1),
+          S = new Set(normD(d).split(" ")),
+          f = w(U.first),
+          l = w(U.last);
+        return (
+          (f.length &&
+            l.length &&
+            f.every((t) => S.has(t)) &&
+            l.every((t) => S.has(t))) ||
+          /\b(own account|self transfer|transfer to self|to self)\b/i.test(d)
+        );
       };
-      const parseKw = (v) =>
-        [
-          ...new Set(
-            v
-              .split(/[,\n]/)
-              .map((x) => x.trim().toLowerCase().slice(0, 30))
-              .filter((x) => x.length >= 2),
-          ),
-        ];
+      const guess = (d) => {
+        if (selfName(d)) return "Transfer to Self";
+        for (const [c, r] of customKW()) if (r.test(d)) return c;
+        const h = hist(d);
+        if (h) return h;
+        if (MBGB.test(d)) return "Internet & Airtime";
+        let best = null,
+          bl = 0;
+        for (const [c, r] of KWR) {
+          const m = d.match(r);
+          if (m && m[0].length > bl) {
+            bl = m[0].length;
+            best = c;
+          }
+        }
+        return best;
+      };
+      const parseKw = (v) => [
+        ...new Set(
+          v
+            .split(/[,\n]/)
+            .map((x) => x.trim().toLowerCase().slice(0, 30))
+            .filter((x) => x.length >= 2),
+        ),
+      ];
       function kwOwner(w, skip) {
         for (const [c, l] of Object.entries(KW)) if (l.includes(w)) return c;
         const cs = (D && D.cats) || [];
@@ -2972,17 +3351,17 @@
         }
       };
       const CURS = ["NGN", "USD", "GBP", "EUR"].concat(
-        (
-          "AED AFN ALL AMD AOA ARS AUD AZN BAM BDT BGN BHD BIF BRL BWP BYN CAD CDF CHF CLP CNY COP CRC CZK DJF DKK DZD EGP ERN ETB FJD GEL GHS GMD GNF HKD HRK HUF IDR ILS INR IQD ISK JMD JOD JPY KES KGS KHR KRW KWD KZT LAK LBP LKR LRD LSL LYD MAD MGA MKD MMK MNT MUR MWK MXN MYR MZN NAD NOK NPR NZD OMR PEN PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SCR SDG SEK SGD SLL SOS SZL THB TJS TND TOP TRY TTD TWD TZS UAH UGX UYU UZS VES VND XAF XOF YER ZAR ZMW ZWL"
-        )
+        "AED AFN ALL AMD AOA ARS AUD AZN BAM BDT BGN BHD BIF BRL BWP BYN CAD CDF CHF CLP CNY COP CRC CZK DJF DKK DZD EGP ERN ETB FJD GEL GHS GMD GNF HKD HRK HUF IDR ILS INR IQD ISK JMD JOD JPY KES KGS KHR KRW KWD KZT LAK LBP LKR LRD LSL LYD MAD MGA MKD MMK MNT MUR MWK MXN MYR MZN NAD NOK NPR NZD OMR PEN PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SCR SDG SEK SGD SLL SOS SZL THB TJS TND TOP TRY TTD TWD TZS UAH UGX UYU UZS VES VND XAF XOF YER ZAR ZMW ZWL"
           .split(" ")
-          .filter((c) => c !== "HRK" && c !== "SLL" && c !== "VES" && c !== "ZWL")
+          .filter(
+            (c) => c !== "HRK" && c !== "SLL" && c !== "VES" && c !== "ZWL",
+          )
           .sort((x, y) => curName(x).localeCompare(curName(y))),
       );
       const curOpts = () =>
-        CURS.map((c) => `<option value="${c}">${curName(c)} (${c})</option>`).join(
-          "",
-        );
+        CURS.map(
+          (c) => `<option value="${c}">${curName(c)} (${c})</option>`,
+        ).join("");
       let U = null,
         D = null,
         touched = false;
@@ -2990,12 +3369,18 @@
         DEF.concat(((D && D.cats) || []).map((x) => [x.n, x.c]));
       const colorOf = (n) =>
         (CATS().find((c) => c[0] === n) || [0, "#7f8a85"])[1];
-      const fmt = (n) =>
-        new Intl.NumberFormat("en", {
-          style: "currency",
-          currency: U ? U.cur : "NGN",
-          maximumFractionDigits: 0,
-        }).format(n);
+      const fmt = (n, c) => {
+        const cc = c || (U ? U.cur : "NGN");
+        try {
+          return new Intl.NumberFormat(LOC(), {
+            style: "currency",
+            currency: cc,
+            maximumFractionDigits: c && U && c !== U.cur ? 2 : 0,
+          }).format(n);
+        } catch (e) {
+          return cc + " " + Math.round(n);
+        }
+      };
       function toast(m) {
         const t = $("toast");
         t.textContent = m;
@@ -3247,6 +3632,67 @@
           }),
       );
       $("scur").innerHTML = curOpts();
+      try {
+        const R2C = {
+            US: "USD",
+            GB: "GBP",
+            NG: "NGN",
+            GH: "GHS",
+            KE: "KES",
+            ZA: "ZAR",
+            CA: "CAD",
+            AU: "AUD",
+            NZ: "NZD",
+            IN: "INR",
+            DE: "EUR",
+            FR: "EUR",
+            ES: "EUR",
+            IT: "EUR",
+            NL: "EUR",
+            IE: "EUR",
+            PT: "EUR",
+            BE: "EUR",
+            AT: "EUR",
+            FI: "EUR",
+            GR: "EUR",
+            JP: "JPY",
+            CN: "CNY",
+            AE: "AED",
+            SA: "SAR",
+            EG: "EGP",
+            TZ: "TZS",
+            UG: "UGX",
+            RW: "RWF",
+            ET: "ETB",
+            MA: "MAD",
+            BR: "BRL",
+            MX: "MXN",
+            SG: "SGD",
+            MY: "MYR",
+            PH: "PHP",
+            PK: "PKR",
+            BD: "BDT",
+            ID: "IDR",
+            TR: "TRY",
+            CH: "CHF",
+            SE: "SEK",
+            NO: "NOK",
+            DK: "DKK",
+            PL: "PLN",
+            KR: "KRW",
+          },
+          TZC = {
+            "Africa/Lagos": "NGN",
+            "Africa/Accra": "GHS",
+            "Africa/Nairobi": "KES",
+            "Africa/Johannesburg": "ZAR",
+            "Africa/Cairo": "EGP",
+          },
+          c =
+            TZC[DTZ] ||
+            R2C[new Intl.Locale(navigator.language).maximize().region];
+        if (c && CURS.includes(c)) $("scur").value = c;
+      } catch (e) {}
       $("out").onclick = async () => {
         if (D && D.sec) {
           devUp(false);
@@ -3274,7 +3720,7 @@
         rec: [],
         bestB: 0,
         bestS: 0,
-        bestSD: 0,
+        bestSW: 0,
         mega: null,
         auto: false,
         goalsDone: 0,
@@ -3336,6 +3782,7 @@
       const save = () =>
         seal(D).then((s) => {
           LS.set("nl_e_" + U.email, s);
+          snap(s);
           sync();
           dirWrite(false)
             .then(dstat)
@@ -3351,10 +3798,21 @@
           try {
             d = await openS(e);
           } catch (x) {
-            throw new Error(
-              "Could not unlock your saved data with that password.",
+            d = await snapRecover();
+            if (!d)
+              throw new Error(
+                "Could not unlock your saved data with that password.",
+              );
+            toast(
+              "Your data was damaged, so it was recovered from an automatic backup.",
             );
           }
+        } else if (!old && !fresh) {
+          d = await snapRecover();
+          if (d)
+            toast(
+              "Your data was recovered from an automatic backup on this device.",
+            );
         }
         D = Object.assign(blank(), d || {});
         if (!D.cur) D.cur = U.cur;
@@ -3384,6 +3842,7 @@
         $("cvF").innerHTML = $("cvT").innerHTML = curOpts();
         $("cvF").value = U.cur;
         $("cvT").value = U.cur === "USD" ? "NGN" : "USD";
+        xInit();
         fixMb();
         recurring();
         render();
@@ -3439,13 +3898,13 @@
         return { n, days: [] };
       }
       function sStreak() {
-        const w = new Set(D.con.map((c) => c.date));
-        let k = today(),
+        const w = new Set(D.con.map((c) => wkStart(c.date)));
+        let k = wkStart(today()),
           n = 0;
-        if (!w.has(k)) k = addDays(k, -1);
+        if (!w.has(k)) k = addDays(k, -7);
         while (w.has(k)) {
           n++;
-          k = addDays(k, -1);
+          k = addDays(k, -7);
         }
         return n;
       }
@@ -3518,18 +3977,17 @@
         ]),
         [
           [1, "Saver’s start"],
-          [3, "Three-day saver"],
-          [7, "Week of saving"],
-          [14, "Steady stacker"],
-          [30, "Month of saving"],
-          [90, "Quarter keeper"],
-          [180, "Half-year hoarder"],
-          [365, "Year of savings"],
+          [2, "Two-week saver"],
+          [4, "Month of saving"],
+          [8, "Steady stacker"],
+          [13, "Quarter keeper"],
+          [26, "Half-year hoarder"],
+          [52, "Year of savings"],
         ].map(([t, n]) => [
           "◆",
           n,
-          "Save " + t + (t === 1 ? " day" : " days") + " in a row",
-          () => D.bestSD || 0,
+          "Save in " + t + (t === 1 ? " week" : " weeks") + " in a row",
+          () => D.bestSW || 0,
           t,
         ]),
         [
@@ -3610,7 +4068,7 @@
         ],
       );
       function row(e) {
-        return `<div class="item"><strong>${esc(e.desc)}</strong><span class="amt">${fmt(e.amt)}</span><button class="x" data-ed="${e.id}" aria-label="Edit expense">✎</button><button class="x" data-del="${e.id}" aria-label="Delete expense">×</button><small><span class="dot" style="background:${colorOf(e.cat)}"></span>${esc(e.cat)} · ${e.date}${e.auto ? " · automatic" : ""}</small></div>`;
+        return `<div class="item"><strong>${esc(e.desc)}</strong><span class="amt">${fmt(e.amt)}${e.oc ? `<small class="lbl"> ${fmt(e.oa, e.oc)}</small>` : ""}</span><button class="x" data-ed="${e.id}" aria-label="Edit expense">✎</button><button class="x" data-del="${e.id}" aria-label="Delete expense">×</button><small><span class="dot" style="background:${colorOf(e.cat)}"></span>${esc(e.cat)} · ${e.date}${e.auto ? " · automatic" : ""}</small></div>`;
       }
       let RNG = 7;
       const dd = (s) => s.slice(8) + "." + s.slice(5, 7);
@@ -3646,7 +4104,7 @@
         );
         const ms = [];
         for (let i = 11; i >= 0; i--) {
-          const d = new Date();
+          const d = nowD();
           d.setDate(1);
           d.setMonth(d.getMonth() - i);
           ms.push(iso(d).slice(0, 7));
@@ -3742,6 +4200,7 @@
         renderSec();
         renderCats();
         remind();
+        renderX();
         ntCheck();
       }
       function renderList() {
@@ -3806,29 +4265,29 @@
       function renderStreaks() {
         const b = bStreak(),
           s = sStreak(),
-          ob = D.bestB + "," + (D.bestSD || 0);
+          ob = D.bestB + "," + (D.bestSW || 0);
         D.bestB = Math.max(D.bestB, b.n);
-        D.bestSD = Math.max(D.bestSD || 0, s);
-        if (ob !== D.bestB + "," + D.bestSD) save();
+        D.bestSW = Math.max(D.bestSW || 0, s);
+        if (ob !== D.bestB + "," + D.bestSW) save();
         $("tally1").innerHTML =
           flame(b.n ? "g" : "z", 36) +
           `<span>${b.n} ${b.n === 1 ? "day" : "days"}</span>`;
         $("ssum").textContent =
           D.bud.a > 0
-            ? `${b.n}-day budget streak · ${s}-day saving streak`
+            ? `${b.n}-day budget streak · ${s}-week saving streak`
             : "Set a budget to start a streak.";
         $("bn").innerHTML =
           flame(b.n ? "g" : "z", 44) +
           `<span>${b.n} ${b.n === 1 ? "day" : "days"}</span>`;
         $("sn").innerHTML =
           flame(s ? "g" : "z", 44) +
-          `<span>${s} ${s === 1 ? "day" : "days"}</span>`;
+          `<span>${s} ${s === 1 ? "week" : "weeks"}</span>`;
         $("bnote").textContent =
           D.bud.a > 0
-            ? `Best: ${D.bestB}. Each day you stay within your ${({ day: "daily", week: "weekly", month: "monthly" })[D.bud.p]} budget adds a day. Going over resets it.`
+            ? `Best: ${D.bestB}. Each day you stay within your ${{ day: "daily", week: "weekly", month: "monthly" }[D.bud.p]} budget adds a day. Going over resets it.`
             : "Set a budget in Plan to start.";
         $("snote").textContent =
-          `Best: ${D.bestSD || 0}. Add to a savings goal at least once a day.`;
+          `Best: ${D.bestSW || 0}. Add to a savings goal at least once every week.`;
         let n = 0;
         const EARN = [];
         $("badges").innerHTML = BADGES.map(([ic, nm, ds, fn, t]) => {
@@ -3851,7 +4310,11 @@
             save();
             fresh.forEach((x) => {
               toast("Badge earned: " + x.split("|")[0]);
-              evt("New badge earned 🏅", x.split("|")[0] + " · " + x.split("|")[1], "badge-" + x);
+              evt(
+                "New badge earned 🏅",
+                x.split("|")[0] + " · " + x.split("|")[1],
+                "badge-" + x,
+              );
             });
           }
         }
@@ -3865,6 +4328,7 @@
         recurring: "Recurring",
         streaks: "Streaks",
         convert: "Currency converter",
+        calendar: "Calendar",
         reports: "Reports",
         security: "Security",
         settings: "Settings",
@@ -3940,13 +4404,26 @@
         }
       };
       $("cat").onchange = () => (touched = true);
-      $("fexp").onsubmit = (e) => {
+      $("fexp").onsubmit = async (e) => {
         e.preventDefault();
-        const amt = parseFloat($("amt").value);
+        let amt = parseFloat($("amt").value),
+          x = {};
+        const xc = $("xcur").value;
+        if (amt > 0 && xc !== U.cur) {
+          const o = await rates(U.cur);
+          if (!o || !o.r[xc])
+            return toast(
+              "Connect to the internet once to get the exchange rate.",
+            );
+          x = { oa: amt, oc: xc, fx: 1 / o.r[xc] };
+          amt = Math.round((amt / o.r[xc]) * 100) / 100;
+          $("xcur").value = U.cur;
+        }
         if (!(amt > 0)) return toast("Enter an amount greater than zero.");
         D.exp.push({
           id: Date.now(),
           amt,
+          ...x,
           date: $("date").value,
           desc: $("desc").value.trim(),
           cat: $("cat").value,
@@ -3973,7 +4450,10 @@
         if (na > 0)
           evt(
             "Budget set",
-            fmt(na) + " per " + $("bp").value + ". Stay within it to build your streak.",
+            fmt(na) +
+              " per " +
+              $("bp").value +
+              ". Stay within it to build your streak.",
             "budget-set",
           );
       };
@@ -4033,6 +4513,7 @@
       };
 
       /* ---------- Bank statement import ---------- */
+      let DFMT = "dmy";
       const MON = "jan feb mar apr may jun jul aug sep oct nov dec".split(" ");
       function toDate(s) {
         s = String(s || "").trim();
@@ -4045,7 +4526,7 @@
             : null;
         };
         if ((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/)))
-          return f(m[1], m[2], m[3]);
+          return DFMT === "mdy" ? f(m[2], m[1], m[3]) : f(m[1], m[2], m[3]);
         if (
           (m = s.match(/^(\d{1,2})[ \-]([A-Za-z]{3})[a-z]*[ \-,]+(\d{2,4})/))
         ) {
@@ -4079,6 +4560,7 @@
       function analyse(text) {
         const lines = text.split(/\r?\n/).filter((l) => l.trim());
         if (lines.length < 2) throw new Error("That statement looks empty.");
+        const sc = detCur(text, U.cur) || U.cur;
         const sample = lines.slice(0, 12).join("\n"),
           dl = [",", ";", "\t"]
             .map((c) => [c, sample.split(c).length])
@@ -4121,6 +4603,21 @@
         }
         if (di < 0)
           throw new Error("Could not find a date column in that statement.");
+        {
+          const ds = rows
+            .slice(hi + 1)
+            .map((r) =>
+              (r[di] || "").match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-]\d{2,4}/),
+            )
+            .filter(Boolean);
+          DFMT = ds.some((m) => +m[2] > 12)
+            ? "mdy"
+            : ds.some((m) => +m[1] > 12)
+              ? "dmy"
+              : /^en-(US|PH)$/i.test(navigator.language)
+                ? "mdy"
+                : "dmy";
+        }
         const split = dbi >= 0 || cri >= 0;
         if (!split && ai < 0)
           throw new Error("Could not find an amount column in that statement.");
@@ -4134,7 +4631,8 @@
         body.forEach((r, i) => {
           const date = toDate(r[di]);
           if (!date) return;
-          const desc = (r[ni] || "Bank transaction").slice(0, 80);
+          const desc = (r[ni] || "Bank transaction").slice(0, 80),
+            rc = detCur(r.join(" "), sc, 1) || sc;
           let o = 0,
             n = 0;
           if (split) {
@@ -4155,45 +4653,24 @@
               date,
               desc,
               amt: o,
+              oa: o,
+              cur: rc,
               cat: guess(desc) || "Other",
               on: true,
             });
-          else if (n > 0) inn.push({ date, desc, amt: n });
+          else if (n > 0) inn.push({ date, desc, amt: n, oa: n, cur: rc });
         });
         out.forEach((t) => {
           t.dup = D.exp.some(
             (e) =>
               e.date === t.date &&
-              Math.abs(e.amt - t.amt) < 0.01 &&
+              (Math.abs(e.amt - t.amt) < 0.01 ||
+                (e.oa && e.oc === t.cur && Math.abs(e.oa - t.oa) < 0.01)) &&
               e.desc.toLowerCase() === t.desc.toLowerCase(),
           );
           if (t.dup) t.on = false;
         });
-        const g = {};
-        out.forEach((t) => {
-          const k = t.desc
-            .toLowerCase()
-            .replace(/[^a-z ]/g, "")
-            .replace(/\s+/g, " ")
-            .trim();
-          if (k) (g[k] = g[k] || []).push(t);
-        });
-        Object.values(g).forEach((a) => {
-          if (new Set(a.map((t) => t.date.slice(0, 7))).size < 2) return;
-          const avg = a.reduce((s, t) => s + t.amt, 0) / a.length;
-          if (!a.every((t) => Math.abs(t.amt - avg) <= avg * 0.1)) return;
-          if (D.rec.some((r) => r.n.toLowerCase() === a[0].desc.toLowerCase()))
-            return;
-          const last = a.reduce((m, t) => (t.date > m ? t.date : m), "");
-          sg.push({
-            n: a[0].desc,
-            amt: Math.round(avg),
-            day: Math.min(31, +a[0].date.slice(8)),
-            cat: a[0].cat,
-            last: last.slice(0, 7),
-          });
-        });
-        return { out, inn, sg: sg.slice(0, 6) };
+        return { out, inn, sg: detRec(out) };
       }
       let IM = null;
       function renderImport() {
@@ -4216,13 +4693,15 @@
               (d) => `<option${d[0] === c ? " selected" : ""}>${d[0]}</option>`,
             )
             .join("");
-        box.innerHTML = `<div class="g4">
+        box.innerHTML =
+          imCurBar() +
+          `<div class="g4">
   <div class="card st"><div class="lbl">Money out</div><b>${fmt(tot(IM.out))}</b></div>
   <div class="card st"><div class="lbl">Money in</div><b>${fmt(tot(IM.inn))}</b></div>
   <div class="card st"><div class="lbl">Spending transactions</div><b>${IM.out.length}</b></div>
   <div class="card st"><div class="lbl">Already in Expensiz</div><b>${dups}</b></div></div>
  <div class="g2x"><div class="card"><h2>Top categories</h2>${rows.map(([n, x]) => `<div class="cb"><div><span><span class="dot" style="background:${colorOf(n)}"></span>${esc(n)}</span><span>${fmt(x)}</span></div><div class="bar"><i style="width:${(x / mx) * 100}%;background:${colorOf(n)}"></i></div></div>`).join("") || '<div class="empty">No spending found.</div>'}</div>
- <div class="card"><h2>Monthly bills spotted</h2>${IM.sg.map((s, i) => `<div class="chip"><span>${esc(s.n)}<br><small class="lbl">${fmt(s.amt)} around day ${s.day}</small></span><button class="ghost" data-sg="${i}">Make recurring</button></div>`).join("") || '<div class="empty">No repeating bills found.</div>'}</div></div>
+ <div class="card"><h2>Monthly bills spotted</h2>${IM.sg.length > 1 ? '<button class="ghost" data-sgall="1">Add all as recurring</button>' : ""}${IM.sg.map((s, i) => `<div class="chip"><span>${esc(s.n)}<br><small class="lbl">${s.var ? "about " : ""}${fmt(s.amt)} around day ${s.day} · ${s.mo} months · ${s.conf} match</small></span><button class="ghost" data-sg="${i}">Make recurring</button></div>`).join("") || '<div class="empty">No repeating bills found.</div>'}</div></div>
  <div class="card trans"><h2>Transactions to import</h2><div class="irs">${IM.out.map((t, i) => `<div class="ir"><input type="checkbox" data-i="${i}" ${t.on ? "checked" : ""} aria-label="Import ${esc(t.desc)}"><span>${esc(t.desc)}<small>${t.date}${t.dup ? " · already in Expensiz" : ""}</small></span><select data-i="${i}" aria-label="Category">${opts(t.cat)}</select><span class="amt">${fmt(t.amt)}</span></div>`).join("")}</div>
  <div style="margin-top:12px"><button id="doImp">Import ${sel.length} transactions</button></div></div>`;
       }
@@ -4237,6 +4716,7 @@
           $("ierr").textContent = x.message;
         }
         renderImport();
+        if (IM) fxApply().then(renderImport);
       }
       function doImport() {
         const s = IM.out.filter((t) => t.on);
@@ -4250,15 +4730,17 @@
             date: t.date,
             desc: t.desc,
             cat: t.cat,
+            ...(t.cur !== U.cur ? { oa: t.oa, oc: t.cur, fx: t.fx } : {}),
           }),
         );
+        D.sugg = (IM.sg || []).slice();
         IM = null;
         $("stext").value = "";
         save();
         render();
         renderImport();
         toast(s.length + " transactions imported");
-        go("overview");
+        go(D.sugg && D.sugg.length ? "recurring" : "overview");
       }
       $("sgo").onclick = runAnalyse;
       const LIB = {
@@ -4449,7 +4931,14 @@
         "Notification" in window && Notification.permission === "granted";
       const ntCfg = () =>
         Object.assign(
-          { bills: true, budget: true, daily: true, events: true, time: "20:00" },
+          {
+            bills: true,
+            budget: true,
+            daily: true,
+            events: true,
+            sec: true,
+            time: "20:00",
+          },
           (D && D.nt) || {},
         );
       async function notify(title, body, tag) {
@@ -4535,7 +5024,11 @@
             ch = true;
             notify(
               "Over budget",
-              "You are over your budget " + PL + " by " + fmt(sp - D.bud.a) + ".",
+              "You are over your budget " +
+                PL +
+                " by " +
+                fmt(sp - D.bud.a) +
+                ".",
               "b100",
             );
           } else if (p >= 0.8 && p < 1 && st.b80 !== per) {
@@ -4559,11 +5052,19 @@
           if (st.pdone !== pr.key) {
             st.pdone = pr.key;
             ch = true;
-            const sp = tot(D.exp.filter((e) => e.date >= pr.a && e.date <= pr.b));
+            const sp = tot(
+              D.exp.filter((e) => e.date >= pr.a && e.date <= pr.b),
+            );
             if ((D.bud.since || U.created || "") <= pr.a && sp <= D.bud.a)
               notify(
                 "You stayed within your budget",
-                "You spent " + fmt(sp) + " of " + fmt(D.bud.a) + " " + pr.l + ". Keep it up.",
+                "You spent " +
+                  fmt(sp) +
+                  " of " +
+                  fmt(D.bud.a) +
+                  " " +
+                  pr.l +
+                  ". Keep it up.",
                 "within-" + pr.key,
               );
           }
@@ -4606,7 +5107,8 @@
             ? "Notifications: " +
               {
                 granted: "on",
-                denied: "blocked. Allow them in your device or browser settings",
+                denied:
+                  "blocked. Allow them in your device or browser settings",
                 default: "off",
               }[Notification.permission]
             : "Notifications are not supported here.";
@@ -4616,6 +5118,7 @@
           $("ntg").checked = c.budget;
           $("ntd").checked = c.daily;
           $("nta").checked = c.events;
+          $("nts").checked = c.sec;
           $("ntt").value = c.time;
         }
       }
@@ -4633,7 +5136,7 @@
         if (!(await notify("Expensiz", "This is a test notification.", "test")))
           toast("The device did not show the notification.");
       };
-      ["ntb", "ntg", "ntd", "nta", "ntt"].forEach(
+      ["ntb", "ntg", "ntd", "nta", "nts", "ntt"].forEach(
         (i) =>
           ($(i).onchange = () => {
             D.nt = {
@@ -4641,6 +5144,7 @@
               budget: $("ntg").checked,
               daily: $("ntd").checked,
               events: $("nta").checked,
+              sec: $("nts").checked,
               time: $("ntt").value || "20:00",
             };
             save();
@@ -4873,6 +5377,7 @@
         render();
         bstat();
         chkRev();
+        secAlerts();
       }
       function bstat() {
         const lb = LS.get("nl_lb_" + U.email, 0);
@@ -4890,7 +5395,9 @@
           const tf = $("m2").checked,
             code = tf ? otpVal($("m2box")) : "";
           if (tf && code.length !== 6)
-            throw new Error("Enter the 6-digit MEGA code from Google Authenticator.");
+            throw new Error(
+              "Enter the 6-digit MEGA code from Google Authenticator.",
+            );
           D.mega = { e: e || U.email, p, tf };
           M2C = code;
           ust = null;
@@ -5393,9 +5900,20 @@
           if (DIR && (await dirPerm(DIR, true))) await DIR.removeEntry(lname());
         } catch (e) {}
         const em = U.email;
-        ["nl_e_", "nl_d_", "nl_ld_", "nl_lb_"].forEach((p) =>
-          localStorage.removeItem(p + em),
-        );
+        [
+          "nl_e_",
+          "nl_d_",
+          "nl_ld_",
+          "nl_lb_",
+          "nl_pat_",
+          "nl_patw_",
+          "nl_pf_",
+          "nl_wa_",
+          "nl_bio_",
+          "nl_flog_",
+          "nl_sn_",
+          "nl_sl_",
+        ].forEach((p) => localStorage.removeItem(p + em));
         localStorage.removeItem("nl_stay");
         Object.keys(localStorage)
           .filter((k) => k.startsWith("nl_fx_"))
@@ -5403,6 +5921,8 @@
         try {
           await idb("del", "key:" + em);
           await idb("del", "dir:" + em);
+          for (const k of await idbKeys("snap:" + em + ":"))
+            await idb("del", k);
         } catch (e) {}
         location.reload();
       }
@@ -5481,7 +6001,9 @@
         for (const w of ws) {
           const o = kwOwner(w, -1);
           if (o) {
-            alert(`"${w}" is already linked to the category "${o}". Remove it or choose a different keyword.`);
+            alert(
+              `"${w}" is already linked to the category "${o}". Remove it or choose a different keyword.`,
+            );
             return;
           }
         }
@@ -5589,6 +6111,7 @@
           mx = Math.max(...sv.map((x) => Math.max(x.e, x.i)), 1);
         $("rep").innerHTML =
           `<h2>Monthly report: ${new Date(m + "-01T00:00:00").toLocaleString("en", { month: "long", year: "numeric" })} · ${esc(U.first + " " + U.last)}</h2><div class="g4">${T("Income", fmt(c.i))}${T("Expenses", fmt(c.e))}${T("Savings", fmt(c.s))}${T("Savings rate", c.i ? Math.round((c.s / c.i) * 100) + "%" : "–")}</div><div class="g2x"><div class="card"><h2>Biggest spending categories</h2>${rows.map(([n, x]) => `<div class="cb"><div><span><span class="dot" style="background:${colorOf(n)}"></span>${esc(n)} · ${Math.round((x / c.e) * 100)}%</span><span>${fmt(x)} <small class="lbl">${pct(x, pc[n] || 0)}</small></span></div><div class="bar"><i style="width:${(x / rows[0][1]) * 100}%;background:${colorOf(n)}"></i></div></div>`).join("") || '<div class="empty">No expenses this month.</div>'}</div><div class="card"><h2>Compared with ${pmo(m)}</h2>${cmp("Income", c.i, p.i)}${cmp("Expenses", c.e, p.e)}${cmp("Savings", c.s, p.s)}<div class="lbl" style="margin-top:8px">Saved to goals this month: ${fmt(g)}</div></div></div><div class="card"><h2>Last 6 months</h2>${ms.map((k, i) => `<div class="cb"><div><span>${k}</span><span>${fmt(sv[i].i)} in · ${fmt(sv[i].e)} out</span></div><div class="bar"><i style="width:${(sv[i].i / mx) * 100}%"></i></div><div class="bar"><i style="width:${(sv[i].e / mx) * 100}%;background:var(--bad)"></i></div></div>`).join("")}</div>`;
+        $("rep").insertAdjacentHTML("beforeend", repExtra(repData(m)));
         const il = D.inc
           .filter((x) => x.date.startsWith(m))
           .sort((a, b) => b.date.localeCompare(a.date));
@@ -5981,6 +6504,140 @@
         else if (e.key === "Enter" && PADI.onEnter) PADI.onEnter();
         else if (e.key === "Escape" && !$("lkx").hidden) $("lkx").click();
       });
+      const wak = "nl_wa_";
+      let BIO = 0;
+      const wb64 = (b) =>
+          b64(new Uint8Array(b))
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, ""),
+        wub64 = (s) =>
+          unb(
+            s.replace(/-/g, "+").replace(/_/g, "/") +
+              "=".repeat((4 - (s.length % 4)) % 4),
+          );
+      const bioOk = async () => {
+        try {
+          return !!(
+            window.isSecureContext &&
+            window.PublicKeyCredential &&
+            (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())
+          );
+        } catch (e) {
+          return false;
+        }
+      };
+      function derRaw(d) {
+        const rd = (p) => {
+          const l = d[p + 1];
+          let s = d.slice(p + 2, p + 2 + l);
+          while (s.length > 32 && s[0] === 0) s = s.slice(1);
+          const z = new Uint8Array(32);
+          z.set(s, 32 - s.length);
+          return [z, p + 2 + l];
+        };
+        const [r, n] = rd(2),
+          [s] = rd(n),
+          o = new Uint8Array(64);
+        o.set(r);
+        o.set(s, 32);
+        return o;
+      }
+      async function bioReg() {
+        const cr = await navigator.credentials.create({
+          publicKey: {
+            challenge: crypto.getRandomValues(new Uint8Array(32)),
+            rp: { name: "Expensiz" },
+            user: {
+              id: crypto.getRandomValues(new Uint8Array(16)),
+              name: U.email,
+              displayName: U.first,
+            },
+            pubKeyCredParams: [
+              { type: "public-key", alg: -7 },
+              { type: "public-key", alg: -257 },
+            ],
+            authenticatorSelection: {
+              authenticatorAttachment: "platform",
+              userVerification: "required",
+              residentKey: "discouraged",
+            },
+            timeout: 60000,
+          },
+        });
+        const r = cr.response;
+        LS.set(wak + U.email, {
+          id: wb64(cr.rawId),
+          pk: r.getPublicKey ? wb64(r.getPublicKey()) : null,
+          alg: r.getPublicKeyAlgorithm ? r.getPublicKeyAlgorithm() : -7,
+        });
+      }
+      async function bioAuth() {
+        const c = LS.get(wak + U.email, null);
+        if (!c) return false;
+        try {
+          const ch = crypto.getRandomValues(new Uint8Array(32)),
+            a = await navigator.credentials.get({
+              publicKey: {
+                challenge: ch,
+                allowCredentials: [{ type: "public-key", id: wub64(c.id) }],
+                userVerification: "required",
+                timeout: 60000,
+              },
+            }),
+            r = a.response;
+          if (!c.pk) return true;
+          const cd = new Uint8Array(r.clientDataJSON),
+            j = JSON.parse(new TextDecoder().decode(cd));
+          if (j.type !== "webauthn.get" || j.challenge !== wb64(ch))
+            return false;
+          const h = new Uint8Array(await crypto.subtle.digest("SHA-256", cd)),
+            ad = new Uint8Array(r.authenticatorData),
+            m = new Uint8Array(ad.length + 32);
+          m.set(ad);
+          m.set(h, ad.length);
+          const rsa = c.alg === -257,
+            k = await crypto.subtle.importKey(
+              "spki",
+              wub64(c.pk),
+              rsa
+                ? { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }
+                : { name: "ECDSA", namedCurve: "P-256" },
+              false,
+              ["verify"],
+            );
+          return await crypto.subtle.verify(
+            rsa ? "RSASSA-PKCS1-v1_5" : { name: "ECDSA", hash: "SHA-256" },
+            k,
+            rsa
+              ? new Uint8Array(r.signature)
+              : derRaw(new Uint8Array(r.signature)),
+            m,
+          );
+        } catch (e) {
+          return false;
+        }
+      }
+      async function bioGo() {
+        if (await bioAuth()) {
+          BIO = 1;
+          if (PRES) PRES(null);
+        } else
+          $("lkm").textContent =
+            "Fingerprint / Face ID was not recognised. Use your pattern instead.";
+      }
+      $("lkb").onclick = bioGo;
+      async function bioUI() {
+        const on = LS.get(wak + U.email, null),
+          ok = await bioOk();
+        if ($("secbio").querySelector("hr")) return;
+        $("secbio").insertAdjacentHTML(
+          "beforeend",
+          ok
+            ? `<hr><p class="lbl">Fingerprint / Face ID: ${on ? "on. You can unlock with it instead of your pattern. The pattern stays as a backup." : "unlock with this device's fingerprint or face recognition. Your pattern stays as a backup."}</p><button class="${on ? "dng" : ""}" data-s="${on ? "woff" : "won"}">${on ? "Turn off" : "Turn on"} fingerprint / Face ID</button>`
+            : '<hr><p class="lbl">Fingerprint / Face ID is not available here. It needs a secure (https) page and a device with fingerprint or face unlock set up.</p>',
+        );
+      }
       const patHash = (seq, salt) => hash(seq.join("-"), unb(salt));
       function patShow(cfg) {
         $("lkt").textContent = cfg.title;
@@ -5988,6 +6645,7 @@
         $("lku").textContent = cfg.ok;
         $("lkr").hidden = $("lko").hidden = !cfg.gate;
         $("lkx").hidden = !!cfg.gate;
+        $("lkb").hidden = !(cfg.gate && LS.get(wak + U.email, null));
         $("lock").hidden = false;
         PADI = patPad($("lkpad"));
         return new Promise((res) => {
@@ -6053,10 +6711,12 @@
           if (await askPw()) {
             localStorage.removeItem("nl_pat_" + em);
             localStorage.removeItem("nl_patw_" + em);
+            localStorage.removeItem(wak + em);
             logS("Pattern lock removed", 1);
             if (PRES) PRES(null);
           }
         };
+        if (LS.get(wak + em, null)) setTimeout(bioGo, 400);
         let msg =
           "Draw your pattern by tapping or dragging across the numbers. They move every time.";
         for (;;) {
@@ -6068,7 +6728,13 @@
             ok: "Unlock",
             gate: true,
           });
-          if (!p) break;
+          if (!p) {
+            if (BIO) {
+              BIO = 0;
+              logS("Fingerprint / Face ID unlock");
+            }
+            break;
+          }
           const until = LS.get("nl_patw_" + em, 0);
           if (until > Date.now()) {
             msg =
@@ -6086,7 +6752,8 @@
           if (f >= 5) {
             LS.set("nl_pf_" + em, 0);
             LS.set("nl_patw_" + em, Date.now() + 30000);
-            msg = "Too many wrong tries. Wait 30 seconds, or remove the lock with your password.";
+            msg =
+              "Too many wrong tries. Wait 30 seconds, or remove the lock with your password.";
           } else {
             LS.set("nl_pf_" + em, f);
             msg = "That pattern is not right. Try again.";
@@ -6117,8 +6784,28 @@
           t: Date.now(),
           m: "Failed sign-in attempt",
           d: DN,
+          loc: LOCS,
+          v: DEV.id,
           bad: 1,
         });
+        const n = l.filter((x) => x.m === "Failed sign-in attempt").length;
+        if (n % 5 === 0) {
+          l.push({
+            id: rnd(),
+            t: Date.now(),
+            m: "5 failed sign-in attempts",
+            d: DN,
+            loc: LOCS,
+            v: DEV.id,
+            bad: 1,
+            al: 1,
+          });
+          notify(
+            "Security alert: " + n + " failed sign-in attempts",
+            em + " · " + DN + (LOCS ? " · " + LOCS : ""),
+            "fail-" + n,
+          );
+        }
         LS.set("nl_flog_" + em, l);
       }
       function pruneLog() {
@@ -6134,11 +6821,19 @@
           t: Date.now(),
           m,
           d: DN,
+          v: DEV.id,
+          loc: LOCS,
+          al: SECNT[m] || m === "New device signed in" ? 1 : 0,
           bad: bad ? 1 : 0,
         });
         pruneLog();
         renderSec();
-        if (SECNT[m]) evt(SECNT[m][0], SECNT[m][1], "sec-" + m);
+        if (SECNT[m])
+          secNote(
+            SECNT[m][0],
+            SECNT[m][1] + " · " + DN + (LOCS ? " · " + LOCS : ""),
+            "sec-" + m,
+          );
         return save();
       }
       const SECNT = {
@@ -6154,15 +6849,29 @@
           "Pattern lock is on",
           "This device now asks for your number pattern to open Expensiz.",
         ],
-        "Pattern changed": ["Pattern changed", "Your pattern lock has a new pattern."],
-        "Pattern lock turned off": ["Pattern lock is off", "This device no longer asks for a pattern."],
+        "Pattern changed": [
+          "Pattern changed",
+          "Your pattern lock has a new pattern.",
+        ],
+        "Pattern lock turned off": [
+          "Pattern lock is off",
+          "This device no longer asks for a pattern.",
+        ],
       };
       function devUp(on) {
         const s = D.sec,
           n = Date.now();
         let d = s.devs.find((x) => x.id === DEV.id);
         if (!d) s.devs.push((d = { id: DEV.id, first: n }));
-        Object.assign(d, { name: DN, how: HOW, last: n, at: n, on, rm: 0 });
+        Object.assign(d, {
+          name: DN,
+          how: HOW,
+          last: n,
+          at: n,
+          on,
+          rm: 0,
+          loc: LOCS || d.loc || "",
+        });
       }
       function mergeSec(a, b) {
         a = a || {};
@@ -6199,11 +6908,15 @@
         }
         pruneLog();
         await DNP;
+        await Promise.race([LOCP, new Promise((r) => setTimeout(r, 2500))]);
         const known = D.sec.devs.some((x) => x.id === DEV.id && !x.rm);
         if (!key && D.sec.tfa && D.sec.tfa.on && !known) await tfaGate();
         localStorage.removeItem("nl_bio_" + em);
         if (LS.get("nl_pat_" + em, null)) await patGate();
+        const nd = !known && D.sec.devs.some((x) => x.id !== DEV.id);
         devUp(true);
+        if (nd) await logS("New device signed in");
+        secAlerts();
         if (!key) logS("Signed in");
       }
       function renderSec() {
@@ -6227,18 +6940,19 @@
         $("secbio").innerHTML = bo
           ? '<p class="lbl">On for this device. After your password (and two-factor code), and each time you reopen the app while staying signed in, you unlock by connecting your numbers. The numbers shuffle every time.</p><div class="row"><button class="ghost" data-s="lock">Lock now</button><button class="ghost" data-s="pchg">Change pattern</button><button class="dng" data-s="boff">Turn off</button></div>'
           : '<p class="lbl">Unlock Expensiz on this device by connecting numbers on a 3×3 grid. The numbers shuffle every time, so a smudge or a glance over your shoulder gives nothing away.</p><button data-s="bon">Set up</button>';
+        if (bo) bioUI();
         $("secdev").innerHTML = [...s.devs]
           .sort((a, b) => b.last - a.last)
           .map(
             (d) =>
-              `<div class="item"><strong>${esc(d.name)}${d.id === DEV.id ? " (this device)" : ""}</strong><span class="lbl">${d.on ? "Signed in" : "Signed out"}</span>${d.on && d.id !== DEV.id ? `<button class="ghost" data-dso="${d.id}">Sign out</button>` : "<span></span>"}<small>${d.how ? esc(d.how) + " · " : ""}First seen ${new Date(d.first).toLocaleDateString()} · last active ${new Date(d.last).toLocaleString()}</small></div>`,
+              `<div class="item"><strong>${esc(d.name)}${d.id === DEV.id ? " (this device)" : ""}</strong><span class="lbl">${d.on ? "Signed in" : "Signed out"}</span>${d.on && d.id !== DEV.id ? `<button class="ghost" data-dso="${d.id}">Sign out</button>` : "<span></span>"}<small>${d.how ? esc(d.how) + " · " : ""}${d.loc ? "📍 " + esc(d.loc) + " · " : ""}First seen ${new Date(d.first).toLocaleDateString()} · last active ${new Date(d.last).toLocaleString()}</small></div>`,
           )
           .join("");
         $("seclog").innerHTML =
           s.log
             .map(
               (l) =>
-                `<div class="item"><span${l.bad ? ' style="color:var(--bad)"' : ""}>${esc(l.m)}</span><span></span><span></span><small>${new Date(l.t).toLocaleString()} · ${esc(l.d)}</small></div>`,
+                `<div class="item"><span${l.bad ? ' style="color:var(--bad)"' : ""}>${esc(l.m)}</span><span></span><span></span><small>${new Date(l.t).toLocaleString()} · ${esc(l.d)}${l.loc ? " · 📍 " + esc(l.loc) : ""}</small></div>`,
             )
             .join("") ||
           '<div class="empty">No activity in the last 7 days.</div>';
@@ -6326,7 +7040,24 @@
           if (await askPw()) {
             localStorage.removeItem("nl_pat_" + U.email);
             localStorage.removeItem("nl_patw_" + U.email);
+            localStorage.removeItem(wak + U.email);
             await logS("Pattern lock turned off", 1);
+          }
+        } else if (a === "won") {
+          try {
+            await bioReg();
+            await logS("Fingerprint / Face ID turned on");
+            toast("Fingerprint / Face ID is on");
+          } catch (x) {
+            toast(
+              "Could not set up biometrics: " +
+                ((x && x.message) || "cancelled"),
+            );
+          }
+        } else if (a === "woff") {
+          if (await askPw()) {
+            localStorage.removeItem(wak + U.email);
+            await logS("Fingerprint / Face ID turned off", 1);
           }
         } else if (a === "lock") patGate();
         renderSec();
@@ -6337,6 +7068,972 @@
           renderSec();
         }
       }, 36e5);
+
+      /* ---------- Multi-currency: detection and conversion ---------- */
+      const CSYM = {
+          "₦": "NGN",
+          "£": "GBP",
+          "€": "EUR",
+          "₹": "INR",
+          "₵": "GHS",
+          "₩": "KRW",
+          "₱": "PHP",
+          "₺": "TRY",
+          zł: "PLN",
+          R$: "BRL",
+          KSh: "KES",
+          US$: "USD",
+          "¥": "JPY",
+        },
+        DOLL = ["USD", "CAD", "AUD", "NZD", "SGD", "HKD", "MXN"],
+        NOTCUR = ["ALL", "TOP", "TRY", "MAD", "PEN", "SOS", "BAM", "LAK"];
+      function detCur(t, dflt, one) {
+        const c = {};
+        (t.match(/\b[A-Z]{3}\b/g) || []).forEach(
+          (x) =>
+            CURS.includes(x) && !NOTCUR.includes(x) && (c[x] = (c[x] || 0) + 2),
+        );
+        Object.entries(CSYM).forEach(([s, k]) => {
+          const n = t.split(s).length - 1;
+          if (n) c[k] = (c[k] || 0) + n;
+        });
+        const d = t.split("$").length - 1;
+        if (d) {
+          const k = DOLL.includes(dflt) ? dflt : "USD";
+          c[k] = (c[k] || 0) + d;
+        }
+        const b = Object.entries(c).sort((x, y) => y[1] - x[1])[0];
+        return b ? b[0] : one ? null : dflt;
+      }
+      async function fxApply() {
+        const all = IM.out.concat(IM.inn);
+        IM.miss = [];
+        if (all.every((t) => t.cur === U.cur)) return;
+        const o = await rates(U.cur);
+        IM.fxT = o && o.t;
+        all.forEach((t) => {
+          const r = o && o.r[t.cur];
+          if (t.cur === U.cur) {
+            t.amt = t.oa;
+            t.fx = 1;
+          } else if (r) {
+            t.amt = Math.round((t.oa / r) * 100) / 100;
+            t.fx = 1 / r;
+          } else {
+            t.amt = t.oa;
+            IM.miss.push(t.cur);
+          }
+        });
+        IM.out.forEach(
+          (t) =>
+            !t.dup &&
+            D.exp.some(
+              (e) =>
+                e.date === t.date &&
+                e.desc.toLowerCase() === t.desc.toLowerCase() &&
+                Math.abs(e.amt - t.amt) < 0.01 * Math.max(1, t.amt / 100),
+            ) &&
+            ((t.dup = 1), (t.on = false)),
+        );
+      }
+      function imCurBar() {
+        const cs = [...new Set(IM.out.concat(IM.inn).map((t) => t.cur))],
+          sc = IM.out.concat(IM.inn)[0];
+        return `<div class="card" style="margin-bottom:12px"><div class="row"><span>Statement currency <b>${cs.join(", ")}</b> detected${cs.length > 1 ? " (mixed)" : ""}.</span><select id="imcur" style="width:auto" aria-label="Statement currency">${curOpts().replace(`value="${cs[0]}"`, `value="${cs[0]}" selected`)}</select></div><p class="lbl" style="margin:6px 0 0">${cs.some((c) => c !== U.cur) ? (IM.miss && IM.miss.length ? "Could not get exchange rates for " + [...new Set(IM.miss)].join(", ") + ". Connect to the internet and re-select the currency." : "Foreign amounts are converted to " + U.cur + (IM.fxT ? " at rates from " + new Date(IM.fxT).toLocaleString(LOC()) : "") + ". Original amounts are kept on each expense.") : "Matches your account currency, so no conversion is needed."}</p></div>`;
+      }
+      $("ires").addEventListener("change", (e) => {
+        if (e.target.id !== "imcur" || !IM) return;
+        IM.out.concat(IM.inn).forEach((t) => (t.cur = e.target.value));
+        renderImport();
+        fxApply().then(renderImport);
+      });
+
+      /* ---------- Recurring-bill detection across months ---------- */
+      function detRec(out) {
+        const med = (a) => {
+            const s = [...a].sort((x, y) => x - y);
+            return s[s.length >> 1];
+          },
+          all = out
+            .filter((t) => !t.dup)
+            .map((t) => ({ d: t.date, a: t.amt, n: t.desc, c: t.cat, im: 1 }))
+            .concat(
+              D.exp
+                .filter((e) => !e.auto)
+                .map((e) => ({ d: e.date, a: e.amt, n: e.desc, c: e.cat })),
+            ),
+          g = {},
+          have = D.rec.map((r) => normD(r.n)).concat(D.sdis || []),
+          res = [],
+          t = today(),
+          pm = iso(new Date(+t.slice(0, 4), +t.slice(5, 7) - 2, 1)).slice(0, 7);
+        all.forEach((x) => {
+          const k = normD(x.n);
+          if (k.length > 2) (g[k] = g[k] || []).push(x);
+        });
+        for (const [k, a] of Object.entries(g)) {
+          if (!a.some((x) => x.im) || have.includes(k)) continue;
+          a.sort((x, y) => x.d.localeCompare(y.d));
+          const mo = [...new Set(a.map((x) => x.d.slice(0, 7)))];
+          if (mo.length < 2) continue;
+          const per = mo.map((m) => a.find((x) => x.d.startsWith(m))),
+            gaps = per
+              .slice(1)
+              .map((x, i) => (new Date(x.d) - new Date(per[i].d)) / 864e5);
+          if (gaps.filter((x) => x >= 21 && x <= 40).length < gaps.length * 0.6)
+            continue;
+          const am = per.map((x) => x.a),
+            md = med(am),
+            fixed = am.every((v) => Math.abs(v - md) <= md * 0.1);
+          if (!fixed && !am.every((v) => Math.abs(v - md) <= md * 0.35))
+            continue;
+          const days = per.map((x) => +x.d.slice(8));
+          if (Math.max(...days) - Math.min(...days) > 6) continue;
+          const lastX = per[per.length - 1],
+            lm = lastX.d.slice(0, 7);
+          res.push({
+            n:
+              lastX.n
+                .replace(/\d{5,}/g, "")
+                .replace(/\s+/g, " ")
+                .trim()
+                .slice(0, 40) || lastX.n,
+            amt: Math.round(md),
+            day: med(days),
+            cat: guess(lastX.n) || lastX.c || "Other",
+            last: lm > pm ? lm : pm,
+            conf: mo.length >= 3 && fixed ? "High" : "Likely",
+            mo: mo.length,
+            var: !fixed,
+          });
+        }
+        return res.sort((x, y) => y.mo - x.mo || y.amt - x.amt).slice(0, 10);
+      }
+      const addRec = (s) =>
+        D.rec.push({
+          id: Date.now() + Math.random(),
+          n: s.n,
+          amt: s.amt,
+          day: s.day,
+          cat: s.cat,
+          last: s.last,
+        });
+      document.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b || !D) return;
+        const d = b.dataset;
+        if (d.sgall && IM) {
+          IM.sg.forEach(addRec);
+          IM.sg = [];
+        } else if (d.sga !== undefined && D.sugg) {
+          addRec(D.sugg[+d.sga]);
+          D.sugg.splice(+d.sga, 1);
+        } else if (d.sgd !== undefined && D.sugg) {
+          D.sdis = (D.sdis || []).concat(normD(D.sugg[+d.sgd].n));
+          D.sugg.splice(+d.sgd, 1);
+        } else if (d.sgall !== undefined && D.sugg) {
+          D.sugg.forEach(addRec);
+          D.sugg = [];
+        } else return;
+        save();
+        recurring();
+        render();
+        renderImport();
+        toast("Recurring bills updated");
+      });
+
+      /* ---------- Financial calendar, suggestions banner ---------- */
+      let CM = null,
+        CS = null;
+      function calEv(m) {
+        const ev = {},
+          add = (d, o) => (ev[d] = ev[d] || []).push(o),
+          t = today();
+        D.exp
+          .filter((x) => x.date.startsWith(m))
+          .forEach((x) =>
+            add(x.date, { k: "paid", n: x.desc, amt: x.amt, bill: !!x.auto }),
+          );
+        D.inc
+          .filter((x) => x.date.startsWith(m))
+          .forEach((x) => add(x.date, { k: "in", n: x.desc, amt: x.amt }));
+        D.rec.forEach((r) => {
+          const d = dueDate(m, r.day);
+          if (d > t) add(d, { k: "due", n: r.n, amt: r.amt });
+        });
+        return ev;
+      }
+      function renderX() {
+        if (!D || !$("calbox")) return;
+        renderScore();
+        const sg = D.sugg || [],
+          t = today();
+        $("rsug").innerHTML = sg.length
+          ? `<div class="card" style="margin-bottom:12px"><h2>Suggested recurring bills</h2><p class="lbl">These were paid in different months of your statements. Add them so Expensiz logs and reminds you automatically.</p>${sg.map((s, i) => `<div class="chip"><span>${esc(s.n)}<br><small class="lbl">${s.var ? "about " : ""}${fmt(s.amt)} around day ${s.day} · ${s.mo} months · ${s.conf} match</small></span><span><button data-sga="${i}">Add</button> <button class="ghost" data-sgd="${i}">Dismiss</button></span></div>`).join("")}${sg.length > 1 ? '<div style="margin-top:8px"><button class="ghost" data-sgall="1">Add all</button></div>' : ""}</div>`
+          : "";
+        if (sg.length && !$("due").querySelector(".sgb"))
+          $("due").insertAdjacentHTML(
+            "afterbegin",
+            `<div class="alert sgb" role="status">We noticed ${sg.length} bill${sg.length > 1 ? "s" : ""} paid every month. <button class="ghost" data-v="recurring">Review</button></div>`,
+          );
+        CM = CM || t.slice(0, 7);
+        CS = CS || t;
+        const m = CM,
+          first = m + "-01",
+          off = (new Date(first + "T00:00:00").getDay() - FW + 7) % 7,
+          ev = calEv(m),
+          names = [...Array(7)].map((_, i) =>
+            new Date(2024, 0, 7 + ((FW + i) % 7)).toLocaleDateString(LOC(), {
+              weekday: "short",
+            }),
+          );
+        let h = `<div class="row" style="justify-content:space-between;margin-bottom:10px"><button class="ghost" data-cm="-1" aria-label="Previous month">‹</button><strong>${new Date(first + "T00:00:00").toLocaleDateString(LOC(), { month: "long", year: "numeric" })}</strong><span><button class="ghost" data-cm="0">Today</button> <button class="ghost" data-cm="1" aria-label="Next month">›</button></span></div><div class="cal">${names.map((x) => `<b>${x}</b>`).join("")}${"<i></i>".repeat(off)}`;
+        for (let d = 1; d <= dim(first); d++) {
+          const ds = m + "-" + String(d).padStart(2, "0"),
+            e = ev[ds] || [],
+            due = e.filter((x) => x.k === "due"),
+            pd = e.filter((x) => x.k === "paid"),
+            inc = e.filter((x) => x.k === "in");
+          h += `<button class="cd${ds === t ? " t" : ""}${ds === CS ? " s" : ""}" data-cd="${ds}"><b>${d}</b><br>${due.length ? `<span class="pd" style="background:var(--gold)"></span>${fmt(tot(due))}<br>` : ""}${pd.length ? `<span class="pd" style="background:var(--bad)"></span>${pd.length}<br>` : ""}${inc.length ? '<span class="pd" style="background:#2e8b57"></span>+' : ""}</button>`;
+        }
+        $("calbox").innerHTML = h + "</div>";
+        const sel = ev[CS] || [];
+        $("calday").textContent = new Date(CS + "T00:00:00").toLocaleDateString(
+          LOC(),
+          { weekday: "long", day: "numeric", month: "long" },
+        );
+        $("calsel").innerHTML =
+          sel
+            .map(
+              (x) =>
+                `<div class="chip"><span>${esc(x.n)}<br><small class="lbl">${{ due: "Bill due", paid: x.bill ? "Recurring bill paid" : "Paid", in: "Income" }[x.k]}</small></span><span>${x.k === "in" ? "+" : ""}${fmt(x.amt)}</span></div>`,
+            )
+            .join("") || '<div class="empty">Nothing on this day.</div>';
+        const up = [];
+        [
+          t.slice(0, 7),
+          iso(new Date(+t.slice(0, 4), +t.slice(5, 7), 1)).slice(0, 7),
+        ].forEach((mm) =>
+          D.rec.forEach((r) => {
+            const d = dueDate(mm, r.day);
+            if (d > t && d <= addDays(t, 30)) up.push({ d, r });
+          }),
+        );
+        up.sort((x, y) => x.d.localeCompare(y.d));
+        $("calup").innerHTML = up.length
+          ? `<p class="lbl">${up.length} bill${up.length > 1 ? "s" : ""} · ${fmt(up.reduce((s, x) => s + x.r.amt, 0))} due</p>` +
+            up
+              .map(
+                (x) =>
+                  `<div class="chip"><span>${esc(x.r.n)}<br><small class="lbl">${x.d} · in ${Math.round((new Date(x.d) - new Date(t)) / 864e5)} days</small></span><span>${fmt(x.r.amt)}</span></div>`,
+              )
+              .join("")
+          : '<div class="empty">No bills due in the next 30 days. Add monthly bills in Recurring.</div>';
+      }
+      $("v-calendar").onclick = (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        if (b.dataset.cm !== undefined) {
+          const k = +b.dataset.cm;
+          CM = k
+            ? iso(new Date(+CM.slice(0, 4), +CM.slice(5, 7) - 1 + k, 1)).slice(
+                0,
+                7,
+              )
+            : today().slice(0, 7);
+          if (!k) CS = today();
+        } else if (b.dataset.cd) CS = b.dataset.cd;
+        renderX();
+      };
+
+      /* ---------- Time zone and per-device setup ---------- */
+      function xInit() {
+        $("xcur").innerHTML = curOpts();
+        $("xcur").value = U.cur;
+        let z = [];
+        try {
+          z = Intl.supportedValuesOf("timeZone");
+        } catch (e) {}
+        $("ptz").innerHTML =
+          `<option value="auto">Automatic (this device: ${esc(DTZ)})</option>` +
+          z.map((x) => `<option>${esc(x)}</option>`).join("");
+        $("ptz").value = D.tz || "auto";
+        if ((!D.tz || D.tz === "auto") && D.lastTz && D.lastTz !== DTZ)
+          toast("Time zone changed to " + DTZ + ". Dates now follow it.");
+        D.lastTz = DTZ;
+        renderSnaps();
+      }
+      $("ptz").onchange = () => {
+        D.tz = $("ptz").value;
+        save();
+        render();
+        toast("Time zone set to " + TZ());
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (
+          D &&
+          !document.hidden &&
+          (!D.tz || D.tz === "auto") &&
+          D.lastTz !== DTZ
+        )
+          xInit();
+      });
+      $("rcat").onclick = () => {
+        let n = 0;
+        D.exp.forEach((e) => {
+          if (!e.cat || e.cat === "Other") {
+            const g = guess(e.desc);
+            if (g && g !== "Other") {
+              e.cat = g;
+              n++;
+            }
+          }
+        });
+        save();
+        render();
+        toast(n ? n + " expenses re-categorised" : "Nothing new to categorise");
+      };
+
+      /* ---------- Automatic local snapshots and recovery ---------- */
+      const idbKeys = (p) =>
+        new Promise((res) => {
+          const r = indexedDB.open("ledger", 1);
+          r.onupgradeneeded = () => r.result.createObjectStore("h");
+          r.onsuccess = () => {
+            const q = r.result.transaction("h").objectStore("h").getAllKeys();
+            q.onsuccess = () =>
+              res(q.result.filter((k) => String(k).startsWith(p)));
+            q.onerror = () => res([]);
+          };
+          r.onerror = () => res([]);
+        });
+      async function snap(s, force) {
+        try {
+          const key = "nl_sn_" + U.email,
+            now = Date.now();
+          if (!force && now - LS.get(key, 0) < 20 * 60 * 1000) return;
+          LS.set(key, now);
+          await idb(
+            "put",
+            "snap:" + U.email + ":" + now,
+            Object.assign({}, s, { n: D.exp.length, t: now }),
+          );
+          const ks = (await idbKeys("snap:" + U.email + ":")).sort().reverse(),
+            seen = new Set();
+          for (const [i, k] of ks.entries()) {
+            const day = new Date(+k.split(":").pop()).toDateString();
+            if (i < 15 || (!seen.has(day) && i < 60)) seen.add(day);
+            else await idb("del", k);
+          }
+          renderSnaps();
+        } catch (e) {}
+      }
+      async function snapRecover() {
+        for (const k of (await idbKeys("snap:" + U.email + ":"))
+          .sort()
+          .reverse()) {
+          try {
+            const d = await openS(await idb("get", k));
+            if (d && Array.isArray(d.exp)) return d;
+          } catch (e) {}
+        }
+        return null;
+      }
+      async function renderSnaps() {
+        if (!U || !$("snlist")) return;
+        const ks = (await idbKeys("snap:" + U.email + ":"))
+          .sort()
+          .reverse()
+          .slice(0, 8);
+        $("snlist").innerHTML = ks.length
+          ? ks
+              .map(
+                (k) =>
+                  `<div class="chip"><span>${new Date(+k.split(":").pop()).toLocaleString(LOC(), { timeZone: TZ() })}</span><button class="ghost" data-snr="${k}">Restore</button></div>`,
+              )
+              .join("")
+          : '<div class="empty">No snapshots yet. The first one is saved as you work.</div>';
+      }
+      $("snow").onclick = async () => {
+        await snap(await seal(D), true);
+        toast("Backup saved on this device");
+      };
+      $("snlist").onclick = async (e) => {
+        const b = e.target.closest("[data-snr]");
+        if (
+          !b ||
+          !confirm(
+            "Restore this snapshot? Your current data is saved as a new snapshot first.",
+          )
+        )
+          return;
+        await snap(await seal(D), true);
+        try {
+          await applyBackup(await idb("get", b.dataset.snr));
+          toast("Snapshot restored");
+        } catch (x) {
+          toast(x.message);
+        }
+        renderSnaps();
+      };
+
+      /* ---------- Detailed reports: data, PDF and Excel ---------- */
+      Object.assign(LIB, {
+        jspdf:
+          "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+        atbl: "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js",
+      });
+      function repData(m) {
+        const ex = D.exp.filter((x) => x.date.startsWith(m)),
+          inc = D.inc.filter((x) => x.date.startsWith(m)),
+          pm = pmo(m),
+          pex = D.exp.filter((x) => x.date.startsWith(pm)),
+          E = tot(ex),
+          I = tot(inc),
+          PE = tot(pex),
+          cat = {},
+          pc = {},
+          mer = {},
+          daily = {};
+        ex.forEach((x) => {
+          cat[x.cat] = (cat[x.cat] || 0) + x.amt;
+          const k = normD(x.desc) || x.desc;
+          mer[k] = mer[k] || { n: x.desc, t: 0, c: 0 };
+          mer[k].t += x.amt;
+          mer[k].c++;
+          daily[x.date] = (daily[x.date] || 0) + x.amt;
+        });
+        pex.forEach((x) => (pc[x.cat] = (pc[x.cat] || 0) + x.amt));
+        const cats = Object.entries(cat)
+            .sort((a, b) => b[1] - a[1])
+            .map(([n, v]) => ({ n, v, p: E ? v / E : 0, pv: pc[n] || 0 })),
+          peak = Object.entries(daily).sort((a, b) => b[1] - a[1])[0],
+          fixed = tot(ex.filter((x) => x.auto)),
+          trend = [...Array(6)].map((_, i) => {
+            let k = m;
+            for (let j = 0; j < 5 - i; j++) k = pmo(k);
+            return {
+              m: k,
+              e: tot(D.exp.filter((x) => x.date.startsWith(k))),
+              i: tot(D.inc.filter((x) => x.date.startsWith(k))),
+            };
+          }),
+          n0 = (v) => U.cur + " " + Math.round(v).toLocaleString(LOC()),
+          ins = [];
+        if (E)
+          ins.push(
+            `You spent ${n0(E)}${PE ? (E > PE ? ", up " : ", down ") + Math.abs(Math.round(((E - PE) / PE) * 100)) + "% on last month." : "."}`,
+          );
+        if (cats[0])
+          ins.push(
+            `${cats[0].n} was your biggest category at ${Math.round(cats[0].p * 100)}% of spending (${n0(cats[0].v)}).`,
+          );
+        const mv = cats
+          .filter((c) => c.pv)
+          .sort((a, b) => Math.abs(b.v - b.pv) - Math.abs(a.v - a.pv))[0];
+        if (mv && Math.abs(mv.v - mv.pv) > 0)
+          ins.push(
+            `Biggest change: ${mv.n} ${mv.v > mv.pv ? "rose" : "fell"} by ${n0(Math.abs(mv.v - mv.pv))} compared with last month.`,
+          );
+        ins.push(
+          I
+            ? `You saved ${Math.round(((I - E) / I) * 100)}% of your income${I < E ? " (you spent more than you earned)" : ""}.`
+            : "No income is recorded for this month, so savings cannot be measured. Add income below.",
+        );
+        if (D.bud.p === "month" && D.bud.a > 0)
+          ins.push(
+            `Monthly budget: ${Math.round((E / D.bud.a) * 100)}% used (${n0(E)} of ${n0(D.bud.a)}).`,
+          );
+        if (fixed)
+          ins.push(
+            `Recurring bills made up ${Math.round((fixed / E) * 100)}% of spending (${n0(fixed)}).`,
+          );
+        if (peak)
+          ins.push(
+            `Your highest-spending day was ${peak[0]} (${n0(peak[1])}).`,
+          );
+        const fx = ex.filter((x) => x.oc);
+        if (fx.length)
+          ins.push(
+            `${fx.length} expense${fx.length > 1 ? "s were" : " was"} paid in other currencies (${[...new Set(fx.map((x) => x.oc))].join(", ")}) and converted to ${U.cur}.`,
+          );
+        return {
+          m,
+          ex,
+          inc,
+          E,
+          I,
+          PE,
+          S: I - E,
+          cats,
+          trend,
+          ins,
+          peak,
+          fixed,
+          avg: E / dim(m + "-01"),
+          top: [...ex].sort((a, b) => b.amt - a.amt).slice(0, 10),
+          mer: Object.values(mer)
+            .sort((a, b) => b.t - a.t)
+            .slice(0, 8),
+        };
+      }
+      const repExtra = (r) =>
+        `<div class="g2x" style="margin-top:14px"><div class="card"><h2>Insights</h2>${r.ins.map((x) => `<div class="chip"><span>${esc(x)}</span></div>`).join("")}</div><div class="card"><h2>Key figures</h2><div class="chip"><span>Average per day</span><span>${fmt(r.avg)}</span></div><div class="chip"><span>Transactions</span><span>${r.ex.length}</span></div><div class="chip"><span>Recurring bills</span><span>${fmt(r.fixed)}</span></div><div class="chip"><span>Peak day</span><span>${r.peak ? r.peak[0] + " · " + fmt(r.peak[1]) : "–"}</span></div></div></div><div class="g2x" style="margin-top:14px"><div class="card"><h2>Largest expenses</h2>${r.top.map((x) => `<div class="chip"><span>${esc(x.desc)}<br><small class="lbl">${x.date} · ${esc(x.cat)}</small></span><span>${fmt(x.amt)}</span></div>`).join("") || '<div class="empty">None</div>'}</div><div class="card"><h2>Top merchants</h2>${r.mer.map((x) => `<div class="chip"><span>${esc(x.n)}<br><small class="lbl">${x.c} payment${x.c > 1 ? "s" : ""}</small></span><span>${fmt(x.t)}</span></div>`).join("") || '<div class="empty">None</div>'}</div></div>`;
+      async function repPDF(m) {
+        await loadJS(LIB.jspdf);
+        await loadJS(LIB.atbl);
+        const r = repData(m),
+          doc = new window.jspdf.jsPDF({ unit: "pt", format: "a4" }),
+          W = doc.internal.pageSize.getWidth(),
+          M = (n, c) =>
+            (c || U.cur) +
+            " " +
+            (+n).toLocaleString(LOC(), {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }),
+          mon = new Date(m + "-01T00:00:00").toLocaleDateString(LOC(), {
+            month: "long",
+            year: "numeric",
+          });
+        doc.setFillColor(111, 102, 230);
+        doc.rect(0, 0, W, 78, "F");
+        doc.setTextColor(255);
+        doc.setFontSize(20);
+        doc.text("Expensiz Financial Report", 36, 36);
+        doc.setFontSize(11);
+        doc.text(
+          mon + "  |  " + U.first + " " + U.last + "  |  " + U.cur,
+          36,
+          56,
+        );
+        doc.text(
+          "Generated " +
+            new Date().toLocaleString(LOC(), { timeZone: TZ() }) +
+            " (" +
+            TZ() +
+            ")",
+          36,
+          70,
+        );
+        let y = 100;
+        const bw = (W - 72 - 30) / 4;
+        [
+          ["Income", M(r.I)],
+          ["Expenses", M(r.E)],
+          ["Net savings", M(r.S)],
+          ["Savings rate", r.I ? Math.round((r.S / r.I) * 100) + "%" : "-"],
+        ].forEach((x, i) => {
+          const bx = 36 + i * (bw + 10);
+          doc.setDrawColor(220);
+          doc.roundedRect(bx, y, bw, 48, 6, 6);
+          doc.setFontSize(9);
+          doc.setTextColor(120);
+          doc.text(x[0], bx + 8, y + 16);
+          doc.setFontSize(10.5);
+          doc.setTextColor(31, 32, 48);
+          doc.text(x[1], bx + 8, y + 36);
+        });
+        y += 74;
+        const sec = (t) => {
+            if (y > 740) {
+              doc.addPage();
+              y = 50;
+            }
+            doc.setFontSize(13);
+            doc.setTextColor(111, 102, 230);
+            doc.text(t, 36, y);
+            y += 8;
+          },
+          tb = (h, b, o) => {
+            if (!b.length) return;
+            doc.autoTable(
+              Object.assign(
+                {
+                  startY: y,
+                  head: [h],
+                  body: b,
+                  styles: { fontSize: 8.5, cellPadding: 3 },
+                  headStyles: { fillColor: [111, 102, 230] },
+                  margin: { left: 36, right: 36 },
+                },
+                o || {},
+              ),
+            );
+            y = doc.lastAutoTable.finalY + 22;
+          };
+        sec("Key insights");
+        doc.setFontSize(9.5);
+        doc.setTextColor(40);
+        y += 8;
+        r.ins.forEach((t) => {
+          const l = doc.splitTextToSize("• " + t, W - 72);
+          if (y > 780) {
+            doc.addPage();
+            y = 50;
+          }
+          doc.text(l, 36, y);
+          y += l.length * 12 + 2;
+        });
+        y += 14;
+        sec("Spending by category");
+        tb(
+          ["Category", "Amount", "Share", "Last month", "Change"],
+          r.cats.map((c) => [
+            c.n,
+            M(c.v),
+            Math.round(c.p * 100) + "%",
+            M(c.pv),
+            pct(c.v, c.pv),
+          ]),
+          { columnStyles: { 1: { halign: "right" }, 3: { halign: "right" } } },
+        );
+        sec("Six-month trend");
+        tb(
+          ["Month", "Income", "Expenses", "Net"],
+          r.trend.map((x) => [x.m, M(x.i), M(x.e), M(x.i - x.e)]),
+        );
+        sec("Largest expenses");
+        tb(
+          ["Date", "Description", "Category", "Amount"],
+          r.top.map((x) => [
+            x.date,
+            x.desc,
+            x.cat,
+            M(x.amt) + (x.oc ? " (" + M(x.oa, x.oc) + ")" : ""),
+          ]),
+        );
+        sec("Top merchants and payees");
+        tb(
+          ["Name", "Payments", "Total"],
+          r.mer.map((x) => [x.n, x.c, M(x.t)]),
+        );
+        sec("Income");
+        tb(
+          ["Date", "Source", "Amount"],
+          r.inc.map((x) => [x.date, x.desc, M(x.amt)]),
+        );
+        sec("Recurring bills");
+        tb(
+          ["Name", "Amount", "Day", "Category"],
+          D.rec.map((x) => [x.n, M(x.amt), x.day, x.cat]),
+        );
+        sec("All expenses");
+        tb(
+          ["Date", "Description", "Category", "Amount"],
+          [...r.ex]
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .map((x) => [x.date, x.desc, x.cat, M(x.amt)]),
+        );
+        const n = doc.getNumberOfPages();
+        for (let i = 1; i <= n; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setTextColor(140);
+          doc.text("Expensiz · page " + i + " of " + n, W / 2, 820, {
+            align: "center",
+          });
+        }
+        doc.save("expensiz-report-" + m + ".pdf");
+      }
+      async function repXLSX(m) {
+        if (!window.XLSX) await loadJS(LIB.xlsx);
+        const r = repData(m),
+          wb = XLSX.utils.book_new(),
+          A = (n, rows, w) => {
+            const s = XLSX.utils.aoa_to_sheet(rows);
+            s["!cols"] = (w || []).map((x) => ({ wch: x }));
+            XLSX.utils.book_append_sheet(wb, s, n);
+          };
+        A(
+          "Summary",
+          [
+            ["Expensiz report", m],
+            ["Name", U.first + " " + U.last],
+            ["Currency", U.cur],
+            ["Time zone", TZ()],
+            [],
+            ["Income", r.I],
+            ["Expenses", r.E],
+            ["Net savings", r.S],
+            ["Savings rate", r.I ? r.S / r.I : 0],
+            ["Previous month expenses", r.PE],
+            ["Average per day", r.avg],
+            [],
+            ["Insights"],
+            ...r.ins.map((x) => [x]),
+          ],
+          [26, 60],
+        );
+        A(
+          "Categories",
+          [
+            ["Category", "Amount", "Share", "Last month", "Change"],
+            ...r.cats.map((c) => [
+              c.n,
+              c.v,
+              c.p,
+              c.pv,
+              c.pv ? (c.v - c.pv) / c.pv : null,
+            ]),
+          ],
+          [26, 14, 10, 14, 10],
+        );
+        A(
+          "Trend",
+          [
+            ["Month", "Income", "Expenses", "Net"],
+            ...r.trend.map((x) => [x.m, x.i, x.e, x.i - x.e]),
+          ],
+          [12, 14, 14, 14],
+        );
+        A(
+          "Expenses",
+          [
+            [
+              "Date",
+              "Description",
+              "Category",
+              "Amount (" + U.cur + ")",
+              "Original amount",
+              "Original currency",
+              "Type",
+            ],
+            ...[...r.ex]
+              .sort((a, b) => a.date.localeCompare(b.date))
+              .map((x) => [
+                x.date,
+                x.desc,
+                x.cat,
+                x.amt,
+                x.oa || "",
+                x.oc || "",
+                x.auto ? "Recurring" : "Manual or imported",
+              ]),
+          ],
+          [12, 38, 22, 16, 16, 12, 18],
+        );
+        A(
+          "Income",
+          [
+            ["Date", "Source", "Amount"],
+            ...r.inc.map((x) => [x.date, x.desc, x.amt]),
+          ],
+          [12, 38, 14],
+        );
+        A(
+          "Recurring bills",
+          [
+            ["Name", "Amount", "Day of month", "Category"],
+            ...D.rec.map((x) => [x.n, x.amt, x.day, x.cat]),
+          ],
+          [30, 14, 12, 22],
+        );
+        XLSX.writeFile(wb, "expensiz-report-" + m + ".xlsx");
+      }
+      const expBtn = (b, fn, name) => async () => {
+        const m = $("rm").value || today().slice(0, 7),
+          t = b.textContent;
+        b.disabled = true;
+        b.textContent = "Preparing…";
+        try {
+          await fn(m);
+          evt(
+            "Report generated",
+            name + " report for " + m + " is ready.",
+            "report",
+          );
+        } catch (x) {
+          toast(
+            /internet|reader/i.test(x.message)
+              ? "Connect to the internet once to load the export tools."
+              : "Export failed: " + x.message,
+          );
+        }
+        b.disabled = false;
+        b.textContent = t;
+      };
+      $("rpdf").onclick = expBtn($("rpdf"), repPDF, "PDF");
+      $("rxls").onclick = expBtn($("rxls"), repXLSX, "Excel");
+
+      /* ---------- Location, security alerts ---------- */
+      let LOCS = (LS.get("nl_loc", null) || {}).s || "";
+      const LOCP = (async () => {
+        try {
+          const c = LS.get("nl_loc", null);
+          if (c && Date.now() - c.t < 36e5) return;
+          if (!navigator.onLine) return;
+          const j = await (await fetch("https://ipwho.is/")).json();
+          if (j && j.success) {
+            LOCS = [j.city, j.region, j.country]
+              .filter((x, i, a) => x && a.indexOf(x) === i)
+              .join(", ");
+            LS.set("nl_loc", { s: LOCS, t: Date.now() });
+          }
+        } catch (e) {}
+      })();
+      Object.assign(SECNT, {
+        "Fingerprint / Face ID turned on": [
+          "Fingerprint / Face ID turned on",
+          "A new way to unlock Expensiz was added.",
+        ],
+        "Fingerprint / Face ID turned off": [
+          "Fingerprint / Face ID turned off",
+          "Fingerprint / Face ID no longer unlocks Expensiz.",
+        ],
+        "Recovery codes regenerated": [
+          "Recovery codes changed",
+          "Your two-factor recovery codes were replaced.",
+        ],
+      });
+      const secNote = (t, b, g) => {
+        toast(t + ": " + b);
+        return ntCfg().sec !== false && notify(t, b, g);
+      };
+      function secAlerts() {
+        if (!D || !D.sec) return;
+        const k = "nl_sl_" + U.email,
+          first = localStorage.getItem(k) === null,
+          seen = LS.get(k, []);
+        let ch = first;
+        D.sec.log.forEach((l) => {
+          if (!l.al || seen.includes(l.id)) return;
+          seen.push(l.id);
+          ch = true;
+          if (first || l.v === DEV.id) return;
+          const w =
+            l.d +
+            (l.loc ? " · " + l.loc : "") +
+            " · " +
+            new Date(l.t).toLocaleString(LOC(), { timeZone: TZ() });
+          secNote(
+            l.m === "New device signed in"
+              ? "New device signed in"
+              : SECNT[l.m]
+                ? SECNT[l.m][0] + " (on another device)"
+                : l.m,
+            w,
+            "sl-" + l.id,
+          );
+        });
+        if (ch) LS.set(k, seen.slice(-200));
+      }
+      setInterval(secAlerts, 5 * 60 * 1000);
+      document.addEventListener(
+        "visibilitychange",
+        () => !document.hidden && secAlerts(),
+      );
+
+      /* ---------- Financial health score ---------- */
+      function hScore() {
+        const t = today(),
+          m = t.slice(0, 7),
+          ex = (x) => x.cat !== "Transfer to Self",
+          sp = (k) => tot(D.exp.filter((x) => x.date.startsWith(k) && ex(x))),
+          E = sp(m),
+          PE = sp(pmo(m)),
+          I = tot(D.inc.filter((x) => x.date.startsWith(m))),
+          c = [];
+        const sr = I > 0 ? (I - E) / I : null;
+        c.push({
+          n: "Savings rate",
+          v: sr == null ? 10 : Math.max(0, Math.min(20, (sr / 0.2) * 20)),
+          tip:
+            sr == null
+              ? "Record your income so Expensiz can measure your savings rate."
+              : sr < 0.2
+                ? "Try to save at least 20% of what you earn."
+                : "You are saving a healthy share of your income.",
+        });
+        let bv = 8,
+          bt = "Set a budget in Plan to track this.";
+        if (D.bud.a > 0) {
+          const [a, b] = range(),
+            p =
+              tot(D.exp.filter((x) => x.date >= a && x.date <= b && ex(x))) /
+              D.bud.a;
+          bv =
+            p <= 0.8
+              ? 20
+              : p <= 1
+                ? 20 - ((p - 0.8) / 0.2) * 10
+                : Math.max(0, 10 - (p - 1) * 30);
+          bt =
+            p > 1
+              ? "You are over budget. Cut back on your biggest category."
+              : p > 0.8
+                ? "You are close to your budget limit."
+                : "You are within your budget.";
+        }
+        c.push({ n: "Budget control", v: bv, tip: bt });
+        const ratio = PE
+          ? ((E / Math.max(1, +t.slice(8))) * dim(m + "-01")) / PE
+          : null;
+        c.push({
+          n: "Spending trend",
+          v:
+            ratio == null
+              ? 12
+              : ratio <= 1
+                ? 20
+                : Math.max(0, 20 - (ratio - 1) * 40),
+          tip:
+            ratio == null
+              ? "Needs a full month of history to compare."
+              : ratio > 1
+                ? "At this pace you will spend more than last month."
+                : "You are spending less than last month.",
+        });
+        const s = sStreak();
+        c.push({
+          n: "Saving habit",
+          v: Math.min(20, s * 5),
+          tip: s
+            ? "Keep adding to your goals every week."
+            : "Add to a savings goal this week to start a streak.",
+        });
+        const from = addDays(t, -90),
+          r90 = D.exp.filter((x) => x.date >= from && ex(x)),
+          all = tot(r90),
+          dn = tot(
+            r90.filter((x) =>
+              ["Loans & Debt", "Fees & Charges"].includes(x.cat),
+            ),
+          ),
+          sh = all ? dn / all : 0;
+        c.push({
+          n: "Debt and fees",
+          v: 20 * (1 - Math.min(1, sh / 0.4)),
+          tip:
+            sh > 0.1
+              ? "Loan repayments and bank fees take " +
+                Math.round(sh * 100) +
+                "% of your spending. Look for ways to reduce them."
+              : "Debt and fees are under control.",
+        });
+        const T = Math.round(c.reduce((a, x) => a + x.v, 0));
+        return {
+          t: T,
+          c,
+          g:
+            T >= 80
+              ? "Excellent"
+              : T >= 65
+                ? "Good"
+                : T >= 50
+                  ? "Fair"
+                  : "Needs attention",
+          tip: c.slice().sort((a, b) => a.v - b.v)[0].tip,
+        };
+      }
+      function renderScore() {
+        if (!$("hscore")) return;
+        const S = hScore(),
+          col =
+            S.t >= 70 ? "var(--acc)" : S.t >= 50 ? "var(--gold)" : "var(--bad)";
+        $("hscore").innerHTML =
+          `<div class="row" style="gap:18px;margin-bottom:10px"><div style="width:92px;height:92px;border-radius:50%;background:conic-gradient(${col} ${S.t * 3.6}deg,var(--line) 0);display:grid;place-items:center;flex:none"><div style="width:70px;height:70px;border-radius:50%;background:var(--pane);display:grid;place-items:center;font:700 26px var(--sans)">${S.t}</div></div><div style="flex:1;min-width:200px"><h2 style="margin:0 0 4px">Financial health: ${S.g}</h2><div class="lbl">Score out of 100 from your savings rate, budget, spending trend, saving habit and debt. Transfers to yourself are not counted as spending.</div><div style="margin-top:6px"><b>Next step:</b> ${esc(S.tip)}</div></div></div>${S.c.map((x) => `<div class="cb"><div><span>${x.n}</span><span>${Math.round(x.v)}/20</span></div><div class="bar"><i style="width:${(x.v / 20) * 100}%"></i></div></div>`).join("")}`;
+      }
 
       /* ---------- Start ---------- */
       (async () => {
